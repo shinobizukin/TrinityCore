@@ -42,6 +42,7 @@
 #include "DatabaseEnv.h"
 #include "DB2Stores.h"
 #include "DisableMgr.h"
+#include "FollowerHandler.h"
 #include "Formulas.h"
 #include "GameEventMgr.h"
 #include "GameObjectAI.h"
@@ -20941,6 +20942,7 @@ void Player::RemovePet(Pet* pet, PetSaveMode mode, bool returnreagent)
     }
 
     pet->SavePetToDB(mode);
+    GetFollowerHandler()->RemoveFollower(pet);
 
     SetMinion(pet, false);
 

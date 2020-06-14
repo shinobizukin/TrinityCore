@@ -226,7 +226,6 @@ enum InventorySlot
     NULL_SLOT                  = 255
 };
 
-struct AbstractFollower;
 struct FactionTemplateEntry;
 struct LiquidData;
 struct LiquidTypeEntry;
@@ -238,6 +237,7 @@ class AuraApplication;
 class AuraEffect;
 class Creature;
 class DynamicObject;
+class FollowerHandler;
 class GameObject;
 class Guardian;
 class Item;
@@ -927,14 +927,6 @@ enum ReactiveType
 };
 
 #define MAX_REACTIVE 3
-#define SUMMON_SLOT_PET     0
-#define SUMMON_SLOT_TOTEM   1
-#define MAX_TOTEM_SLOT      5
-#define SUMMON_SLOT_MINIPET 5
-#define SUMMON_SLOT_QUEST   6
-#define MAX_SUMMON_SLOT     7
-
-#define MAX_GAMEOBJECT_SLOT 4
 
 enum PlayerTotemType
 {
@@ -1792,9 +1784,8 @@ class TC_GAME_API Unit : public WorldObject
         void  ModSpellCastTime(SpellInfo const* spellProto, int32& castTime, Spell* spell = nullptr);
         void  ModSpellDurationTime(SpellInfo const* spellProto, int32& castTime, Spell* spell = nullptr);
 
-        void FollowerAdded(AbstractFollower* f) { m_followingMe.insert(f); }
-        void FollowerRemoved(AbstractFollower* f) { m_followingMe.erase(f); }
-        void RemoveAllFollowers();
+        // Makes the unit follow the given target. Use this function above using the MotionMaster::MoveFollow for default follow behaivior.
+        void FollowTarget(Unit* target);
 
         MotionMaster* GetMotionMaster() { return i_motionMaster; }
         MotionMaster const* GetMotionMaster() const { return i_motionMaster; }
@@ -1896,8 +1887,6 @@ class TC_GAME_API Unit : public WorldObject
 
         void RewardRage(uint32 baseRage, bool attacker);
 
-        virtual float GetFollowAngle() const { return static_cast<float>(M_PI/2); }
-
         void OutDebugInfo() const;
         virtual bool IsLoading() const { return false; }
         bool IsDuringRemoveFromWorld() const {return m_duringRemoveFromWorld;}
@@ -1937,6 +1926,8 @@ class TC_GAME_API Unit : public WorldObject
         virtual void Whisper(uint32 textId, Player* target, bool isBossWhisper = false);
 
         float GetCollisionHeight() const override;
+
+        FollowerHandler* GetFollowerHandler() { return _followerHandler; }
 
     protected:
         explicit Unit (bool isWorldObject);
@@ -2024,6 +2015,8 @@ class TC_GAME_API Unit : public WorldObject
 
         void InterruptMovementBasedAuras();
 
+        FollowerHandler* _followerHandler;
+
     private:
 
         void UpdateSplineMovement(uint32 t_diff);
@@ -2054,8 +2047,6 @@ class TC_GAME_API Unit : public WorldObject
         DiminishingReturn m_Diminishing[DIMINISHING_MAX];
         // Manage all Units that are threatened by us
         HostileRefManager m_HostileRefManager;
-
-        std::unordered_set<AbstractFollower*> m_followingMe;
 
         GuidSet m_ComboPointHolders;
 

@@ -17,6 +17,7 @@
 
 #include "Common.h"
 #include "DatabaseEnv.h"
+#include "FollowerHandler.h"
 #include "Log.h"
 #include "WorldPacket.h"
 #include "ObjectMgr.h"
@@ -173,9 +174,9 @@ bool Pet::LoadPetData(Player* owner, uint32 petEntry, uint32 petnumber, bool cur
 
     if (IsCritter())
     {
-        float px, py, pz;
-        owner->GetClosePoint(px, py, pz, GetCombatReach(), PET_FOLLOW_DIST, GetFollowAngle());
-        Relocate(px, py, pz, owner->GetOrientation());
+        Position pos = owner->GetPosition();
+        owner->MovePositionToFirstCollision(pos, STRAIGHT_FOLLOW_DISTANCE, float(M_PI));
+        Relocate(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), owner->GetOrientation());
 
         if (!IsPositionValid())
         {
@@ -235,10 +236,10 @@ bool Pet::LoadPetData(Player* owner, uint32 petEntry, uint32 petnumber, bool cur
 
     SynchronizeLevelWithOwner();
 
-    // Set pet's position after setting level, its size depends on it
-    float px, py, pz;
-    owner->GetClosePoint(px, py, pz, GetCombatReach(), PET_FOLLOW_DIST, PET_FOLLOW_ANGLE);
-    Relocate(px, py, pz, owner->GetOrientation());
+    Position pos = owner->GetPosition();
+    owner->MovePositionToFirstCollision(pos, STRAIGHT_FOLLOW_DISTANCE, float(M_PI_2));
+    Relocate(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), owner->GetOrientation());
+
     if (!IsPositionValid())
     {
         TC_LOG_ERROR("entities.pet", "Pet (guidlow %d, entry %d) not loaded. Suggested coordinates isn't valid (X: %f Y: %f)",
