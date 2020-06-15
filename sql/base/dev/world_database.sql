@@ -1,8 +1,8 @@
--- MySQL dump 10.13  Distrib 5.7.29, for Linux (x86_64)
+-- MySQL dump 10.13  Distrib 5.7.17, for Win64 (x86_64)
 --
--- Host: localhost    Database: world
+-- Host: 127.0.0.1    Database: world
 -- ------------------------------------------------------
--- Server version	5.7.29-0ubuntu0.18.04.1
+-- Server version	5.7.27-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -2423,68 +2423,19 @@ CREATE TABLE `points_of_interest_locale` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `pool_creature`
+-- Table structure for table `pool_members`
 --
 
-DROP TABLE IF EXISTS `pool_creature`;
+DROP TABLE IF EXISTS `pool_members`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `pool_creature` (
-  `guid` int(10) unsigned NOT NULL DEFAULT '0',
-  `pool_entry` mediumint(8) unsigned NOT NULL DEFAULT '0',
-  `chance` float unsigned NOT NULL DEFAULT '0',
+CREATE TABLE `pool_members` (
+  `type` smallint(10) unsigned NOT NULL,
+  `spawnId` int(10) unsigned NOT NULL,
+  `poolSpawnId` int(10) unsigned NOT NULL,
+  `chance` double unsigned NOT NULL,
   `description` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`guid`),
-  KEY `idx_guid` (`guid`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `pool_gameobject`
---
-
-DROP TABLE IF EXISTS `pool_gameobject`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `pool_gameobject` (
-  `guid` int(10) unsigned NOT NULL DEFAULT '0',
-  `pool_entry` mediumint(8) unsigned NOT NULL DEFAULT '0',
-  `chance` float unsigned NOT NULL DEFAULT '0',
-  `description` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`guid`),
-  KEY `idx_guid` (`guid`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `pool_pool`
---
-
-DROP TABLE IF EXISTS `pool_pool`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `pool_pool` (
-  `pool_id` mediumint(8) unsigned NOT NULL DEFAULT '0',
-  `mother_pool` mediumint(8) unsigned NOT NULL DEFAULT '0',
-  `chance` float NOT NULL DEFAULT '0',
-  `description` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`pool_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `pool_quest`
---
-
-DROP TABLE IF EXISTS `pool_quest`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `pool_quest` (
-  `entry` int(10) unsigned NOT NULL DEFAULT '0',
-  `pool_entry` mediumint(8) unsigned NOT NULL DEFAULT '0',
-  `description` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`entry`),
-  KEY `idx_guid` (`entry`)
+  PRIMARY KEY (`type`,`spawnId`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -2658,6 +2609,37 @@ CREATE TABLE `quest_poi_points` (
   `VerifiedBuild` smallint(5) DEFAULT '0',
   PRIMARY KEY (`QuestID`,`BlobIndex`,`Idx1`,`Idx2`),
   KEY `questId_id` (`QuestID`,`BlobIndex`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `quest_pool_members`
+--
+
+DROP TABLE IF EXISTS `quest_pool_members`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `quest_pool_members` (
+  `questId` int(10) unsigned NOT NULL,
+  `poolId` int(10) unsigned NOT NULL,
+  `poolIndex` tinyint(2) unsigned NOT NULL COMMENT 'Multiple quests with the same index will always spawn together!',
+  `description` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`questId`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `quest_pool_template`
+--
+
+DROP TABLE IF EXISTS `quest_pool_template`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `quest_pool_template` (
+  `poolId` mediumint(8) unsigned NOT NULL,
+  `numActive` int(10) unsigned NOT NULL COMMENT 'Number of indices to have active at any time',
+  `description` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`poolId`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -3934,4 +3916,4 @@ CREATE TABLE `world_map_template` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-05-19  1:44:37
+-- Dump completed on 2020-06-15 20:59:27
