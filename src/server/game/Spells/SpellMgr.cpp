@@ -5622,6 +5622,16 @@ void SpellMgr::LoadSpellInfoCorrections()
         spellInfo->MaxAffectedTargets = 4;
     });
 
+    // Laser Strike
+    ApplySpellFix({
+        81067,
+        91884
+    }, [](SpellInfo* spellInfo)
+    {
+        spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_INITIAL_AGGRO;
+        spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_4_YARDS);
+    });
+
     // ENDOF BLACKWING DESCENT SPELLS
 
     // Living Bomb
