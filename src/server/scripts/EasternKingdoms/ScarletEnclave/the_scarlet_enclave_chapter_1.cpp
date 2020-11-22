@@ -130,7 +130,7 @@ public:
             Initialize();
             events.Reset();
             me->SetFaction(FACTION_CREATURE);
-            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+            me->SetImmuneToPC(true);
             me->SetStandState(UNIT_STAND_STATE_KNEEL);
             me->LoadEquipment(0, true);
         }
@@ -235,7 +235,7 @@ public:
                     else
                     {
                         me->SetFaction(FACTION_MONSTER);
-                        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+                        me->SetImmuneToPC(false);
                         me->SetReactState(REACT_AGGRESSIVE);
                         phase = PHASE_ATTACKING;
 
@@ -627,7 +627,7 @@ public:
                         return true;
                 }
 
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+                me->SetImmuneToPC(false);
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_15);
 
                 player->CastSpell(me, SPELL_DUEL, false);
@@ -1039,8 +1039,6 @@ enum GiftOfTheHarvester
 
 class spell_gift_of_the_harvester : public SpellScript
 {
-    PrepareSpellScript(spell_gift_of_the_harvester);
-
     bool Validate(SpellInfo const* /*spell*/) override
     {
         return ValidateSpellInfo(
@@ -1061,7 +1059,7 @@ class spell_gift_of_the_harvester : public SpellScript
 
     void Register() override
     {
-        OnEffectHitTarget += SpellEffectFn(spell_gift_of_the_harvester::HandleScriptEffect, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
+        OnEffectHitTarget.Register(&spell_gift_of_the_harvester::HandleScriptEffect, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
     }
 };
 

@@ -16,6 +16,7 @@
  */
 
 #include "MoveSplineInit.h"
+#include "MovementPackets.h"
 #include "MoveSpline.h"
 #include "MovementPacketBuilder.h"
 #include "Creature.h"
@@ -119,17 +120,20 @@ namespace Movement
         unit->m_movementInfo.SetMovementFlags(moveFlags);
         move_spline.Initialize(args);
 
-        WorldPacket data(SMSG_MONSTER_MOVE, 64);
-        data << unit->GetPackGUID();
-        if (unit->GetTransGUID())
+        WorldPackets::Movement::MonsterMove packet(transport);
+        packet.MoverGUID = unit->GetGUID();
+        packet.Pos = Position(real_position.x, real_position.y, real_position.z, real_position.orientation);
+        packet.InitializeSplineData(move_spline);
+        if (unit->m_movementInfo.HasExtraMovementFlag(MOVEMENTFLAG2_IS_VEHICLE_EXIT_VOLUNTARY))
+            packet.SplineData.Move.VehicleExitVoluntary = true;
+
+        if (transport)
         {
-            data.SetOpcode(SMSG_MONSTER_MOVE_TRANSPORT);
-            data << unit->GetTransGUID().WriteAsPacked();
-            data << int8(unit->GetTransSeat());
+            packet.SplineData.Move.TransportGUID = unit->GetTransGUID();
+            packet.SplineData.Move.VehicleSeat = unit->GetTransSeat();
         }
 
-        PacketBuilder::WriteMonsterMove(move_spline, data);
-        unit->SendMessageToSet(&data, true);
+        unit->SendMessageToSet(packet.Write(), true);
 
         return move_spline.Duration();
     }
@@ -165,17 +169,26 @@ namespace Movement
         move_spline.onTransport = transport;
         move_spline.Initialize(args);
 
-        WorldPacket data(SMSG_MONSTER_MOVE, 64);
-        data << unit->GetPackGUID();
-        if (transport)
+        WorldPackets::Movement::MonsterMove packet(transport);
+        packet.MoverGUID = unit->GetGUID();
+        packet.Pos = Position(loc.x, loc.y, loc.z, loc.orientation);
+        packet.SplineData.ID = move_spline.GetId();
+
+        if (unit->IsAlive())
+            packet.SplineData.Move.Face = MONSTER_MOVE_STOP;
+        else
         {
-            data.SetOpcode(SMSG_MONSTER_MOVE_TRANSPORT);
-            data << unit->GetTransGUID().WriteAsPacked();
-            data << int8(unit->GetTransSeat());
+            // Stopping splines for killed creatures send a normal packet with their current position as first path point
+            packet.SplineData.Move.Face = MONSTER_MOVE_NORMAL;
+            packet.SplineData.Move.Points.push_back({ loc.x, loc.y, loc.z });
         }
 
-        PacketBuilder::WriteStopMovement(loc, args.splineId, data);
-        unit->SendMessageToSet(&data, true);
+        if (transport)
+        {
+            packet.SplineData.Move.TransportGUID = unit->GetTransGUID();
+            packet.SplineData.Move.VehicleSeat = unit->GetTransSeat();
+        }
+        unit->SendMessageToSet(packet.Write(), true);
     }
 
     MoveSplineInit::MoveSplineInit(Unit* m) : unit(m)
