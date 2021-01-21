@@ -37,6 +37,7 @@
 #include "CharacterPackets.h"
 #include "Chat.h"
 #include "CinematicMgr.h"
+#include "CombatPackets.h"
 #include "CombatLogPackets.h"
 #include "Common.h"
 #include "ConditionMgr.h"
@@ -58,6 +59,8 @@
 #include "GuildMgr.h"
 #include "InstanceSaveMgr.h"
 #include "InstanceScript.h"
+#include "InstancePackets.h"
+#include "ItemPackets.h"
 #include "KillRewarder.h"
 #include "Language.h"
 #include "LFGMgr.h"
@@ -4132,12 +4135,9 @@ void Player::BuildPlayerRepop()
 
 void Player::ResurrectPlayer(float restore_percent, bool applySickness)
 {
-    WorldPacket data(SMSG_DEATH_RELEASE_LOC, 4*4);          // remove spirit healer position
-    data << uint32(-1);
-    data << float(0);
-    data << float(0);
-    data << float(0);
-    SendDirectMessage(&data);
+    WorldPackets::Misc::DeathReleaseLoc packet;
+    packet.MapID = -1;
+    SendDirectMessage(packet.Write());
 
     // speed change, land walk
 
@@ -4578,12 +4578,10 @@ void Player::RepopAtGraveyard()
         TeleportTo(ClosestGrave->Continent, ClosestGrave->Loc.X, ClosestGrave->Loc.Y, ClosestGrave->Loc.Z, orientation ? *orientation : GetOrientation());
         if (isDead())                                        // not send if alive, because it used in TeleportTo()
         {
-            WorldPacket data(SMSG_DEATH_RELEASE_LOC, 4 * 4);  // show spirit healer position on minimap
-            data << ClosestGrave->Continent;
-            data << ClosestGrave->Loc.X;
-            data << ClosestGrave->Loc.Y;
-            data << ClosestGrave->Loc.Z;
-            SendDirectMessage(&data);
+            WorldPackets::Misc::DeathReleaseLoc packet;
+            packet.MapID = ClosestGrave->Continent;
+            packet.Loc.Pos = { ClosestGrave->Loc.X, ClosestGrave->Loc.Y, ClosestGrave->Loc.Z };
+            SendDirectMessage(packet.Write());
         }
     }
     else if (GetPositionZ() < GetMap()->GetMinHeight(GetPhaseShift(), GetPositionX(), GetPositionY()))
@@ -5878,6 +5876,8 @@ ActionButton const* Player::GetActionButton(uint8 button)
 
 bool Player::UpdatePosition(float x, float y, float z, float orientation, bool teleport)
 {
+    uint32 oldWmoGroupId = GetWMOGroupId();
+
     if (!Unit::UpdatePosition(x, y, z, orientation, teleport))
         return false;
 
@@ -5896,9 +5896,16 @@ bool Player::UpdatePosition(float x, float y, float z, float orientation, bool t
         m_needsZoneUpdate = false;
     }
 
-    // group update
+    // Add group update flags
     if (GetGroup())
+    {
+        // Position has changed
         SetGroupUpdateFlag(GROUP_UPDATE_FLAG_POSITION);
+
+        // Player is no longer on a WMO that belongs to the same area
+        if (oldWmoGroupId != GetWMOGroupId())
+            SetGroupUpdateFlag(GROUP_UPDATE_FLAG_WMO_GROUP_ID);
+    }
 
     CheckAreaExploreAndOutdoor();
 
@@ -6471,12 +6478,12 @@ bool Player::RewardHonor(Unit* victim, uint32 groupsize, int32 honor, bool pvpto
     // victim_rank [1..4]  HK: <dishonored rank>
     // victim_rank [5..19] HK: <alliance\horde rank>
     // victim_rank [0, 20+] HK: <>
-    WorldPacket data(SMSG_PVP_CREDIT, 4+8+4);
-    data << uint32(honor);
-    data << uint64(victim_guid);
-    data << uint32(victim_rank);
+    WorldPackets::Combat::PvPCredit data;
+    data.Honor = honor;
+    data.Target = victim_guid;
+    data.Rank = victim_rank;
 
-    SendDirectMessage(&data);
+    SendDirectMessage(data.Write());
 
     // add honor points
     ModifyCurrency(CURRENCY_TYPE_HONOR_POINTS, int32(honor));
@@ -8583,13 +8590,13 @@ void Player::SendNotifyCurrencyLootRemoved(uint8 lootSlot)
     SendDirectMessage(&data);
 }
 
-void Player::SendUpdateWorldState(uint32 Field, uint32 Value) const
+void Player::SendUpdateWorldState(uint32 variable, uint32 value, bool hidden /*= false*/) const
 {
-    WorldPacket data(SMSG_UPDATE_WORLD_STATE, 4+4+1);
-    data << Field;
-    data << Value;
-    data << uint8(0);
-    SendDirectMessage(&data);
+    WorldPackets::WorldState::UpdateWorldState worldstate;
+    worldstate.VariableID = variable;
+    worldstate.Value = value;
+    worldstate.Hidden = hidden;
+    SendDirectMessage(worldstate.Write());
 }
 
 void Player::SendInitWorldStates(uint32 zoneId, uint32 areaId)
@@ -9288,9 +9295,8 @@ uint32 Player::GetXPRestBonus(uint32 xp)
 
 void Player::SetBindPoint(ObjectGuid guid) const
 {
-    WorldPacket data(SMSG_BINDER_CONFIRM, 8);
-    data << uint64(guid);
-    SendDirectMessage(&data);
+    WorldPackets::Misc::BinderConfirm packet(guid);
+    SendDirectMessage(packet.Write());
 }
 
 void Player::SendTalentWipeConfirm(ObjectGuid guid) const
@@ -18917,6 +18923,20 @@ InstancePlayerBind* Player::GetBoundInstance(uint32 mapid, Difficulty difficulty
     return nullptr;
 }
 
+InstancePlayerBind const* Player::GetBoundInstance(uint32 mapid, Difficulty difficulty, bool withExpired) const
+{
+    // some instances only have one difficulty
+    MapDifficulty const* mapDiff = sDBCManager.GetDownscaledMapDifficultyData(mapid, difficulty);
+    if (!mapDiff)
+        return nullptr;
+
+    BoundInstancesMap::const_iterator itr = m_boundInstances[difficulty].find(mapid);
+    if (itr != m_boundInstances[difficulty].end())
+        if (itr->second.extendState || withExpired)
+            return &itr->second;
+    return nullptr;
+}
+
 InstanceSave* Player::GetInstanceSave(uint32 mapid, bool raid)
 {
     InstancePlayerBind* pBind = GetBoundInstance(mapid, GetDifficulty(raid));
@@ -19047,12 +19067,7 @@ void Player::SetPendingBind(uint32 instanceId, uint32 bindTimer)
 
 void Player::SendRaidInfo()
 {
-    uint32 counter = 0;
-
-    WorldPacket data(SMSG_RAID_INSTANCE_INFO, 4);
-
-    size_t p_counter = data.wpos();
-    data << uint32(counter);                                // placeholder
+    WorldPackets::Instance::InstanceInfo instanceInfo;
 
     time_t now = GameTime::GetGameTime();
 
@@ -19064,30 +19079,38 @@ void Player::SendRaidInfo()
             if (bind.perm)
             {
                 InstanceSave* save = bind.save;
-                bool isHeroic = save->GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC || save->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC;
-                uint32 completedEncounters = 0;
+
+                WorldPackets::Instance::InstanceLock lockInfos;
+
+                Difficulty difficulty = save->GetDifficulty();
+                lockInfos.Heroic = (difficulty == RAID_DIFFICULTY_10MAN_HEROIC || difficulty == RAID_DIFFICULTY_25MAN_HEROIC);
+
+                if (lockInfos.Heroic)
+                    lockInfos.Difficulty = difficulty == RAID_DIFFICULTY_10MAN_HEROIC ? RAID_DIFFICULTY_10MAN_NORMAL : RAID_DIFFICULTY_25MAN_NORMAL;
+                else
+                    lockInfos.Difficulty = difficulty;
+
+                lockInfos.InstanceID = save->GetInstanceId();
+                lockInfos.MapID = save->GetMapId();
+                if (bind.extendState != EXTEND_STATE_EXTENDED)
+                    lockInfos.TimeRemaining = save->GetResetTime() - now;
+                else
+                    lockInfos.TimeRemaining = sInstanceSaveMgr->GetSubsequentResetTime(save->GetMapId(), save->GetDifficulty(), save->GetResetTime()) - now;
+
+                lockInfos.CompletedMask = 0;
                 if (Map* map = sMapMgr->FindMap(save->GetMapId(), save->GetInstanceId()))
                     if (InstanceScript* instanceScript = ((InstanceMap*)map)->GetInstanceScript())
-                        completedEncounters = instanceScript->GetCompletedEncounterMask();
+                        lockInfos.CompletedMask = instanceScript->GetCompletedEncounterMask();
 
-                data << uint32(save->GetMapId());                          // map id
-                data << uint32(save->GetDifficulty());                     // difficulty
-                data << uint32(isHeroic);                   // heroic
-                data << uint64(save->GetInstanceId());                     // instance id
-                data << uint8(bind.extendState != EXTEND_STATE_EXPIRED);   // expired = 0
-                data << uint8(bind.extendState == EXTEND_STATE_EXTENDED);  // extended = 1
-                time_t nextReset = save->GetResetTime();
-                if (bind.extendState == EXTEND_STATE_EXTENDED)
-                    nextReset = sInstanceSaveMgr->GetSubsequentResetTime(save->GetMapId(), save->GetDifficulty(), save->GetResetTime());
-                data << uint32(nextReset - now);                           // reset time
-                data << uint32(completedEncounters);                       // completed encounters mask
-                ++counter;
+                lockInfos.Locked = bind.extendState != EXTEND_STATE_EXPIRED;
+                lockInfos.Extended = bind.extendState == EXTEND_STATE_EXTENDED;
+
+                instanceInfo.LockList.push_back(lockInfos);
             }
         }
     }
 
-    data.put<uint32>(p_counter, counter);
-    SendDirectMessage(&data);
+    SendDirectMessage(instanceInfo.Write());
 }
 
 /*
@@ -19110,10 +19133,10 @@ void Player::SendSavedInstances()
         }
     }
 
-    //Send opcode SMSG_UPDATE_INSTANCE_OWNERSHIP. true or false means, whether you have current raid/heroic instances
-    data.Initialize(SMSG_UPDATE_INSTANCE_OWNERSHIP, 4);
-    data << uint32(hasBeenSaved);
-    SendDirectMessage(&data);
+    // Send opcode SMSG_UPDATE_INSTANCE_OWNERSHIP. true or false means, whether you have current raid/heroic instances
+    WorldPackets::Instance::UpdateInstanceOwnership updateInstanceOwnership;
+    updateInstanceOwnership.IOwnInstance = hasBeenSaved;
+    SendDirectMessage(updateInstanceOwnership.Write());
 
     if (!hasBeenSaved)
         return;
@@ -19124,9 +19147,9 @@ void Player::SendSavedInstances()
         {
             if (itr->second.perm)
             {
-                data.Initialize(SMSG_UPDATE_LAST_INSTANCE, 4);
-                data << uint32(itr->second.save->GetMapId());
-                SendDirectMessage(&data);
+                WorldPackets::Instance::UpdateLastInstance packet;
+                packet.MapID = itr->second.save->GetMapId();
+                SendDirectMessage(packet.Write());
             }
         }
     }
@@ -21540,9 +21563,10 @@ void Player::SendSpellModifiers() const
 // send Proficiency
 void Player::SendProficiency(ItemClass itemClass, uint32 itemSubclassMask) const
 {
-    WorldPacket data(SMSG_SET_PROFICIENCY, 1 + 4);
-    data << uint8(itemClass) << uint32(itemSubclassMask);
-    SendDirectMessage(&data);
+    WorldPackets::Item::SetProficiency packet;
+    packet.ProficiencyClass = itemClass;
+    packet.ProficiencyMask = itemSubclassMask;
+    SendDirectMessage(packet.Write());
 }
 
 void Player::RemovePetitionsAndSigns(ObjectGuid guid, uint32 type)
@@ -22471,13 +22495,8 @@ void Player::UpdateHomebindTime(uint32 time)
     if (m_InstanceValid || IsGameMaster())
     {
         if (m_HomebindTimer)                                 // instance valid, but timer not reset
-        {
-            // hide reminder
-            WorldPacket data(SMSG_RAID_GROUP_ONLY, 4+4);
-            data << uint32(0);
-            data << uint32(0);
-            SendDirectMessage(&data);
-        }
+            SendRaidGroupOnlyMessage(RAID_GROUP_ERR_NONE, 0);
+
         // instance is valid, reset homebind timer
         m_HomebindTimer = 0;
     }
@@ -22496,10 +22515,7 @@ void Player::UpdateHomebindTime(uint32 time)
         // instance is invalid, start homebind timer
         m_HomebindTimer = 60000;
         // send message to player
-        WorldPacket data(SMSG_RAID_GROUP_ONLY, 4+4);
-        data << uint32(m_HomebindTimer);
-        data << uint32(1);
-        SendDirectMessage(&data);
+        SendRaidGroupOnlyMessage(RAID_GROUP_ERR_REQUIREMENTS_UNMATCH, m_HomebindTimer);
         TC_LOG_DEBUG("maps", "Player::UpdateHomebindTime: Player '%s' (%s) will be teleported to homebind in 60 seconds",
             GetName().c_str(), GetGUID().ToString().c_str());
     }
@@ -23334,49 +23350,11 @@ void Player::SetGroup(Group* group, int8 subgroup)
 
 void Player::SendInitialPacketsBeforeAddToMap()
 {
-    /// Pass 'this' as argument because we're not stored in ObjectAccessor yet
-    GetSocial()->SendSocialList(this, SOCIAL_FLAG_ALL);
+    /// SMSG_CONTROL_UPDATE
+    SetClientControl(this, true);
 
     /// SMSG_BIND_POINT_UPDATE
     SendBindPointUpdate();
-
-    // SMSG_SET_PROFICIENCY
-    // SMSG_SET_PCT_SPELL_MODIFIER
-    // SMSG_SET_FLAT_SPELL_MODIFIER
-
-    /// SMSG_TALENTS_INFO
-    SendTalentsInfoData(false);
-
-    /// SMSG_SEND_KNOWN_SPELLS
-    SendKnownSpells();
-
-    /// SMSG_SEND_UNLEARN_SPELLS
-    SendDirectMessage(WorldPackets::Spells::SendUnlearnSpells().Write());
-
-    /// SMSG_UPDATE_ACTION_BUTTONS
-    SendInitialActionButtons();
-
-    /// SMSG_INITIALIZE_FACTIONS
-    m_reputationMgr->SendInitialReputations();
-
-    /// SMSG_SET_FORCED_REACTIONS
-    GetReputationMgr().SendForceReactions();
-
-    /// SMSG_SETUP_CURRENCY
-    SendCurrencies();
-
-    /// SMSG_EQUIPMENT_SET_LIST
-    SendEquipmentSetList();
-
-    m_achievementMgr->SendAllAchievementData(this);
-
-    /// SMSG_LOGIN_SET_TIME_SPEED
-    static float const TimeSpeed = 0.01666667f;
-    WorldPackets::Misc::LoginSetTimeSpeed loginSetTimeSpeed;
-    loginSetTimeSpeed.NewSpeed = TimeSpeed;
-    loginSetTimeSpeed.GameTime = GameTime::GetGameTime();
-    loginSetTimeSpeed.GameTimeHolidayOffset = 0; /// @todo
-    SendDirectMessage(loginSetTimeSpeed.Write());
 
     /// SMSG_WORLD_SERVER_INFO
     WorldPackets::Misc::WorldServerInfo worldServerInfo;
@@ -23387,15 +23365,84 @@ void Player::SendInitialPacketsBeforeAddToMap()
     worldServerInfo.WeeklyReset = sWorld->GetNextWeeklyQuestsResetTime() - WEEK;
     SendDirectMessage(worldServerInfo.Write());
 
+    /// SMSG_SET_PROFICIENCY
+    SendProficiency(ITEM_CLASS_WEAPON, m_WeaponProficiency);
+    SendProficiency(ITEM_CLASS_ARMOR, m_ArmorProficiency);
+
+    /// SMSG_SEND_KNOWN_SPELLS
+    SendKnownSpells();
+
+    /// SMSG_SEND_UNLEARN_SPELLS
+    SendDirectMessage(WorldPackets::Spells::SendUnlearnSpells().Write());
+
+    /// SMSG_UPDATE_TALENT_DATA
+    SendTalentsInfoData(false);
+
+    /// SMSG_UPDATE_ACTION_BUTTONS
+    SendInitialActionButtons();
+
+    /// SMSG_INITIALIZE_FACTIONS
+    m_reputationMgr->SendInitialReputations();
+
+    /// MSG_SET_DUNGEON_DIFFICULTY
+    // Handled in WorldSession::HandlePlayerLogin
+
+    /// SMSG_ACCOUNT_DATA_TIMES
+    // Handled in WorldSession::HandlePlayerLogin
+
+    /// Pass 'this' as argument because we're not stored in ObjectAccessor yet
+    GetSocial()->SendSocialList(this, SOCIAL_FLAG_ALL);
+
+    /// SMSG_MOTD
+    // Handled in WorldSession::HandlePlayerLogin
+
+    /// SMSG_FEATURE_SYSTEM_STATUS
+    // Handled in WorldSession::HandlePlayerLogin
+
+    /// SMSG_RESYNC_RUNES
+    if (getClass() == CLASS_DEATH_KNIGHT)
+    {
+        // Initialize rune cooldowns
+        ResyncRunes();
+
+        // Send already converted runes
+        SendConvertedRunes();
+    }
+
     // Spell modifiers
     SendSpellModifiers();
+
+    /// SMSG_SET_FORCED_REACTIONS
+    GetReputationMgr().SendForceReactions();
+
+    /// SMSG_SETUP_CURRENCY
+    SendCurrencies();
+
+    /// SMSG_WEEKLY_SPELL_USAGE
+
+    ///  SMSG_ALL_ACHIEVEMENT_DATA
+    m_achievementMgr->SendAllAchievementData(this);
+
+    /// SMSG_LOGIN_SET_TIME_SPEED
+    static float const TimeSpeed = 0.016666667535901069f;
+    WorldPackets::Misc::LoginSetTimeSpeed loginSetTimeSpeed;
+    loginSetTimeSpeed.NewSpeed = TimeSpeed;
+    loginSetTimeSpeed.GameTime = GameTime::GetGameTime();
+    loginSetTimeSpeed.GameTimeHolidayOffset = 0; /// @todo
+    SendDirectMessage(loginSetTimeSpeed.Write());
+
+    /// SMSG_EQUIPMENT_SET_LIST
+    SendEquipmentSetList();
 
     // SMSG_TALENTS_INFO x 2 for pet (unspent points and talents in separate packets...)
     // SMSG_PET_GUIDS
     // SMSG_UPDATE_WORLD_STATE
     // SMSG_POWER_UPDATE
 
-    SetMover(this);
+    // Not going with  SetMover(this); because sniffs show no packet
+    m_unitMovedByMe->m_playerMovingMe = nullptr;
+    m_unitMovedByMe = this;
+    m_unitMovedByMe->m_playerMovingMe = this;
 }
 
 void Player::SendInitialPacketsAfterAddToMap()
@@ -23405,7 +23452,7 @@ void Player::SendInitialPacketsAfterAddToMap()
     // update zone
     uint32 newzone, newarea;
     GetZoneAndAreaId(newzone, newarea);
-    UpdateZone(newzone, newarea);                            // also call SendInitWorldStates();
+    UpdateZone(newzone, newarea); // also calls SendInitWorldStates and SendZoneDynamicInfo
 
     GetSession()->ResetTimeSync();
     GetSession()->SendTimeSync();
@@ -23446,17 +23493,6 @@ void Player::SendInitialPacketsAfterAddToMap()
     SendQuestGiverStatusMultiple();
     SendTaxiNodeStatusMultiple();
 
-    if (getClass() == CLASS_DEATH_KNIGHT)
-    {
-        for (uint8 i = 0; i < MAX_RUNES; i++)
-        {
-            WorldPackets::Spells::ConvertRune packet;
-            packet.Index = i;
-            packet.Rune = GetCurrentRune(i);
-            SendDirectMessage(packet.Write());
-        }
-    }
-
     // raid downscaling - send difficulty to player
     if (GetMap()->IsRaid())
     {
@@ -23496,11 +23532,11 @@ void Player::SendUpdateToOutOfRangeGroupMembers()
 
 void Player::SendTransferAborted(uint32 mapid, TransferAbortReason reason, uint8 arg) const
 {
-    WorldPacket data(SMSG_TRANSFER_ABORTED, 4+2);
-    data << uint32(mapid);
-    data << uint8(reason); // transfer abort reason
-    data << uint8(arg);
-    SendDirectMessage(&data);
+    WorldPackets::Movement::TransferAborted packet;
+    packet.MapID = mapid;
+    packet.TransfertAbort = reason; // transfer abort reason
+    packet.Arg = arg;
+    SendDirectMessage(packet.Write());
 }
 
 void Player::SendInstanceResetWarning(uint32 mapid, Difficulty difficulty, uint32 time, bool welcome) const
@@ -23518,17 +23554,17 @@ void Player::SendInstanceResetWarning(uint32 mapid, Difficulty difficulty, uint3
     else
         type = RAID_INSTANCE_WARNING_MIN_SOON;
 
-    WorldPacket data(SMSG_RAID_INSTANCE_MESSAGE, 4+4+4+4);
-    data << uint32(type);
-    data << uint32(mapid);
-    data << uint32(difficulty);                             // difficulty
-    data << uint32(time);
-    if (type == RAID_INSTANCE_WELCOME)
-    {
-        data << uint8(0);                                   // is locked
-        data << uint8(0);                                   // is extended, ignored if prev field is 0
-    }
-    SendDirectMessage(&data);
+    WorldPackets::Instance::RaidInstanceMessage raidInstanceMessage;
+    raidInstanceMessage.Type = type;
+    raidInstanceMessage.MapID = mapid;
+    raidInstanceMessage.Difficulty = difficulty;
+    raidInstanceMessage.TimeLeft = time;
+    if (InstancePlayerBind const* bind = GetBoundInstance(mapid, difficulty))
+        raidInstanceMessage.Locked = bind->perm;
+    else
+        raidInstanceMessage.Locked = false;
+    raidInstanceMessage.Extended = false;
+    SendDirectMessage(raidInstanceMessage.Write());
 }
 
 void Player::ApplyEquipCooldown(Item* pItem)
@@ -25418,7 +25454,7 @@ void Player::RestoreBaseRune(uint8 index)
     }
 
     ConvertRune(index, GetBaseRune(index));
-    SetRuneConvertAura(index, NULL, SPELL_AURA_NONE, NULL);
+    SetRuneConvertAura(index, nullptr, SPELL_AURA_NONE, nullptr);
 }
 
 void Player::ConvertRune(uint8 index, RuneType newType)
@@ -25432,13 +25468,32 @@ void Player::ConvertRune(uint8 index, RuneType newType)
     SendDirectMessage(packet.Write());
 }
 
-void Player::ResyncRunes(uint8 count)
+void Player::ResyncRunes()
 {
-    WorldPackets::Spells::ResyncRunes packet(count);
-    for (uint32 i = 0; i < count; ++i)
-        packet.Runes.push_back({ uint8(GetCurrentRune(i)), uint8(255 - (GetRuneCooldown(i) * 51)) });
+    WorldPackets::Spells::ResyncRunes packet;
+    for (uint8 i = 0; i < MAX_RUNES; ++i)
+    {
+        WorldPackets::Spells::ResyncRune resyncRune;
+        resyncRune.RuneType = GetCurrentRune(i);
+        resyncRune.Cooldown = uint8(GetRuneCooldown(i) * uint32(255) / uint32(RUNE_BASE_COOLDOWN));
+        packet.Runes.emplace_back(resyncRune);
+    }
 
     SendDirectMessage(packet.Write());
+}
+
+void Player::SendConvertedRunes()
+{
+    for (uint8 i = 0; i < MAX_RUNES; ++i)
+    {
+        if (GetBaseRune(i) != GetCurrentRune(i))
+        {
+            WorldPackets::Spells::ConvertRune convertRune;
+            convertRune.Index = i;
+            convertRune.Rune = GetCurrentRune(i);
+            SendDirectMessage(convertRune.Write());
+        }
+    }
 }
 
 void Player::AddRunePower(uint8 mask)
@@ -28191,6 +28246,15 @@ void Player::SendSpellCategoryCooldowns() const
     }
 
     SendDirectMessage(cooldowns.Write());
+}
+
+void Player::SendRaidGroupOnlyMessage(RaidGroupReason reason, int32 delay) const
+{
+    WorldPackets::Instance::RaidGroupOnly raidGroupOnly;
+    raidGroupOnly.Delay = delay;
+    raidGroupOnly.Reason = reason;
+
+    SendDirectMessage(raidGroupOnly.Write());
 }
 
 void Player::SetRestFlag(RestFlag restFlag, uint32 triggerId /*= 0*/)

@@ -1614,6 +1614,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         uint32 GetReputation(uint32 factionentry) const;
         std::string GetGuildName() const;
         void SendSpellCategoryCooldowns() const;
+        void SendRaidGroupOnlyMessage(RaidGroupReason reason, int32 delay) const;
 
         // Talents
         uint32 GetFreeTalentPoints() const { return _talentMgr->FreeTalentPoints; }
@@ -2060,7 +2061,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void DeleteEquipmentSet(uint64 setGuid);
 
         void SendInitWorldStates(uint32 zone, uint32 area);
-        void SendUpdateWorldState(uint32 Field, uint32 Value) const;
+        void SendUpdateWorldState(uint32 variable, uint32 value, bool hidden = false) const;
         void SendDirectMessage(WorldPacket const* data) const;
         void SendBGWeekendWorldStates() const;
         void SendBattlefieldWorldStates() const;
@@ -2249,6 +2250,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         // permanent binds and solo binds by difficulty
         BoundInstancesMap m_boundInstances[MAX_DIFFICULTY];
         InstancePlayerBind* GetBoundInstance(uint32 mapid, Difficulty difficulty, bool withExpired = false);
+        InstancePlayerBind const* GetBoundInstance(uint32 mapid, Difficulty difficulty, bool withExpired = false) const;
         BoundInstancesMap& GetBoundInstances(Difficulty difficulty) { return m_boundInstances[difficulty]; }
         InstanceSave* GetInstanceSave(uint32 mapid, bool raid);
         void UnbindInstance(uint32 mapid, Difficulty difficulty, bool unload = false);
@@ -2325,7 +2327,8 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void RemoveRunesByAuraEffect(AuraEffect const* aura);
         void RestoreBaseRune(uint8 index);
         void ConvertRune(uint8 index, RuneType newType);
-        void ResyncRunes(uint8 count);
+        void ResyncRunes();
+        void SendConvertedRunes();
         void AddRunePower(uint8 mask);
         void InitRunes();
 
@@ -2372,6 +2375,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void SendMovementSetCollisionHeight(float height, UpdateCollisionHeightReason reason);
 
         bool CanFly() const override { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_CAN_FLY); }
+        bool CanEnterWater() const override { return true; }
 
         std::string GetMapAreaAndZoneString() const;
         std::string GetCoordsMapAreaAndZoneString() const;
