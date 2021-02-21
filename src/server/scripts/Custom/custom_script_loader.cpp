@@ -16,10 +16,13 @@
  */
 
 // This is where scripts' loading functions should be declared:
-
+void AddSC_vehicle_ai_test_script();
+void AddSC_creature_ai_test_script();
 
 // The name of this function should match:
 // void Add${NameOfDirectory}Scripts()
 void AddCustomScripts()
 {
+    AddSC_vehicle_ai_test_script();
+    AddSC_creature_ai_test_script();
 }
