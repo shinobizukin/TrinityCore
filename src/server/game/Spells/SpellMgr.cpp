@@ -3042,8 +3042,6 @@ void SpellMgr::LoadSpellInfoCorrections()
         41376, // Spite
         45248, // Shadow Blades
         46771, // Flame Sear
-        54171, // Divine Storm
-        54172, // Divine Storm (heal)
         66588 // Flaming Spear
     }, [](SpellInfo* spellInfo)
     {
@@ -4642,18 +4640,6 @@ void SpellMgr::LoadSpellInfoCorrections()
     });
 
     // Siamat
-    // Deflecting Winds
-    // Why would Siamat silence and pacify himself if he is suposed to cast spells?
-    ApplySpellFix({ 84589 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_DUMMY;
-    });
-    // Cloud Burst
-    ApplySpellFix({ 83790 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_40_YARDS);
-    });
-
     // Lightning Charge
     ApplySpellFix({ 91872 }, [](SpellInfo* spellInfo)
     {
@@ -4728,6 +4714,14 @@ void SpellMgr::LoadSpellInfoCorrections()
     }, [](SpellInfo* spellInfo)
     {
         spellInfo->Effects[EFFECT_0].RadiusEntry = nullptr;
+    });
+
+    ApplySpellFix({
+        73847, // Summon Sun-Touched Sprite
+        73848  // Summon Sun-Touched Spriteling
+    }, [](SpellInfo* spellInfo)
+    {
+        spellInfo->RangeEntry = sSpellRangeStore.LookupEntry(7); // 10yd
     });
 
     // END OF HALLS OF ORIGINATION SPELLS

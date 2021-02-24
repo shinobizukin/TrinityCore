@@ -109,14 +109,13 @@ void WorldPackets::Party::PartyMemberState::Initialize(Player const* player)
         MemberStats.VehicleSeat = player->GetVehicle()->GetVehicleInfo()->SeatID[player->m_movementInfo.transport.seat];
 
     // Auras
-    MemberStats.AuraMask = player->GetAuraUpdateMaskForRaid();
+    uint64 auraMask = 0;
     for (uint8 i = 0; i < MAX_AURAS; ++i)
     {
-        if (!(MemberStats.AuraMask & (uint64(1) << i)))
-            continue;
-
         if (AuraApplication const* aurApp = player->GetVisibleAura(i))
         {
+            auraMask |= (uint64(1) << i);
+
             WorldPackets::Party::PartyMemberAuraStates aura;
             aura.SpellID = aurApp->GetBase()->GetId();
             aura.Flags = aurApp->GetFlags();
@@ -134,18 +133,19 @@ void WorldPackets::Party::PartyMemberState::Initialize(Player const* player)
 
             MemberStats.Auras.push_back(aura);
         }
+
+        MemberStats.AuraMask = auraMask;
     }
 
     // Phases
     PhasingHandler::FillPartyMemberPhase(&MemberStats.Phases, player->GetPhaseShift());
-
 
     // Pet
     if (player->GetPet())
     {
         ::Pet* pet = player->GetPet();
 
-        MemberStats.PetStats = boost::in_place();
+        MemberStats.PetStats.emplace();
 
         MemberStats.PetStats->GUID = pet->GetGUID();
         MemberStats.PetStats->Name = pet->GetName();
@@ -158,14 +158,13 @@ void WorldPackets::Party::PartyMemberState::Initialize(Player const* player)
         MemberStats.PetStats->MaxPower = player->GetMaxPower(player->GetPowerType());
 
         // Auras
-        MemberStats.PetStats->AuraMask = player->GetAuraUpdateMaskForRaid();
+        auraMask = 0;
         for (uint8 i = 0; i < MAX_AURAS; ++i)
         {
-            if (!(MemberStats.PetStats->AuraMask & (uint64(1) << i)))
-                continue;
-
             if (AuraApplication const* aurApp = pet->GetVisibleAura(i))
             {
+                auraMask |= (uint64(1) << i);
+
                 WorldPackets::Party::PartyMemberAuraStates aura;
                 aura.SpellID = aurApp->GetBase()->GetId();
                 aura.Flags = aurApp->GetFlags();
@@ -184,6 +183,8 @@ void WorldPackets::Party::PartyMemberState::Initialize(Player const* player)
                 MemberStats.PetStats->Auras.push_back(aura);
             }
         }
+
+        MemberStats.PetStats->AuraMask = auraMask;
     }
 }
 
@@ -259,7 +260,7 @@ WorldPacket const* WorldPackets::Party::PartyMemberState::Write()
             _worldPacket << aura;
     }
 
-    if (MemberStats.PetStats.is_initialized())
+    if (MemberStats.PetStats.has_value())
     {
         if (ChangeMask & GROUP_UPDATE_FLAG_PET_GUID)
             _worldPacket << MemberStats.PetStats->GUID;
@@ -290,10 +291,10 @@ WorldPacket const* WorldPackets::Party::PartyMemberState::Write()
     if (ChangeMask & GROUP_UPDATE_FLAG_PET_AURAS)
     {
         _worldPacket << uint8(_worldPacket.GetOpcode() == SMSG_PARTY_MEMBER_FULL_STATE);
-        _worldPacket << uint64(MemberStats.PetStats.is_initialized() ? MemberStats.PetStats->AuraMask : 0);
-        _worldPacket << uint32(MemberStats.PetStats.is_initialized() ? MemberStats.PetStats->Auras.size() : 0);
+        _worldPacket << uint64(MemberStats.PetStats.has_value() ? MemberStats.PetStats->AuraMask : 0);
+        _worldPacket << uint32(MemberStats.PetStats.has_value() ? MemberStats.PetStats->Auras.size() : 0);
 
-        if (MemberStats.PetStats.is_initialized())
+        if (MemberStats.PetStats.has_value())
             for (WorldPackets::Party::PartyMemberAuraStates const& aura : MemberStats.PetStats->Auras)
                 _worldPacket << aura;
     }

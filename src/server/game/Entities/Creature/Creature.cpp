@@ -60,6 +60,10 @@
 VendorItemCount::VendorItemCount(uint32 _item, uint32 _count)
     : itemId(_item), count(_count), lastIncrementTime(GameTime::GetGameTime()) { }
 
+CreatureMovementData::CreatureMovementData() : Ground(CreatureGroundMovementType::Run), Flight(CreatureFlightMovementType::None),
+Swim(true), Rooted(false), Random(CreatureRandomMovementType::Walk), InteractionPauseTimer(sWorld->getIntConfig(CONFIG_CREATURE_STOP_FOR_PLAYER)) { }
+
+
 std::string CreatureMovementData::ToString() const
 {
     char const* const GroundStates[] = { "None", "Run", "Hover" };
@@ -74,6 +78,7 @@ std::string CreatureMovementData::ToString() const
         << ", Random: " << RandomStates[AsUnderlyingType(Random)];
     if (Rooted)
         str << ", Rooted";
+    str << ", InteractionPauseTimer: " << InteractionPauseTimer;
 
     return str.str();
 }
@@ -543,10 +548,8 @@ bool Creature::InitEntry(uint32 entry, CreatureData const* data /*= nullptr*/)
     SetFloatValue(UNIT_MOD_CAST_SPEED, 1.0f);
     SetFloatValue(UNIT_MOD_CAST_HASTE, 1.0f);
 
-    SetSpeedRate(MOVE_WALK,   cinfo->speed_walk);
-    SetSpeedRate(MOVE_RUN,    cinfo->speed_run);
-    SetSpeedRate(MOVE_SWIM,   1.0f); // using 1.0 rate
-    SetSpeedRate(MOVE_FLIGHT, 1.0f); // using 1.0 rate
+    InitializeCreatureMovementInfo(cinfo->movementId);
+    InitializeMovementSpeeds();
 
     // Will set UNIT_FIELD_BOUNDINGRADIUS and UNIT_FIELD_COMBATREACH
     SetObjectScale(GetNativeObjectScale());
@@ -2176,7 +2179,7 @@ bool Creature::IsImmunedToSpell(SpellInfo const* spellInfo, Unit* caster, Option
         if (!spellInfo->Effects[i].IsEffect())
             continue;
 
-        if (effectMask && !(effectMask.get() & (1 << i)))
+        if (effectMask && !(effectMask.value() & (1 << i)))
             continue;
 
         if (!IsImmunedToSpellEffect(spellInfo, i, caster))
@@ -2752,6 +2755,42 @@ void Creature::RefreshSwimmingFlag(bool recheck)
         SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SWIMMING);
 }
 
+void Creature::InitializeCreatureMovementInfo(uint32 movementId)
+{
+    if (CreatureMovementInfoOverride const* movementInfoOverride = sObjectMgr->GetCreatureMovementInfoOverride(movementId))
+    {
+        if (movementInfoOverride->RunSpeed > 0.f)
+        {
+            _creatureMovementInfo.RunSpeed = movementInfoOverride->RunSpeed;
+            _creatureMovementInfo.HasRunSpeedOverriden = true;
+        }
+
+        if (movementInfoOverride->WalkSpeed > 0.f)
+        {
+            _creatureMovementInfo.WalkSpeed = movementInfoOverride->WalkSpeed;
+            _creatureMovementInfo.HasWalkSpeedOverriden = true;
+        }
+    }
+}
+
+void Creature::InitializeMovementSpeeds()
+{
+    // This segment needs to be removed once model based speeds are implemented and movementIds fully added.
+    SetSpeedRate(MOVE_WALK,   m_creatureInfo->speed_walk);
+    SetSpeedRate(MOVE_RUN,    m_creatureInfo->speed_run);
+    SetSpeedRate(MOVE_SWIM,   1.0f); // using 1.0 rate
+    SetSpeedRate(MOVE_FLIGHT, 1.0f); // using 1.0 rate
+
+    // Todo: movement speeds by model
+
+    // Overridden movement speed values by movementId data
+    if (_creatureMovementInfo.HasRunSpeedOverriden)
+        SetSpeed(MOVE_RUN, _creatureMovementInfo.RunSpeed);
+
+    if (_creatureMovementInfo.HasWalkSpeedOverriden)
+        SetSpeed(MOVE_WALK, _creatureMovementInfo.WalkSpeed);
+}
+
 void Creature::AllLootRemovedFromCorpse()
 {
     if (loot.loot_type != LOOT_SKINNING && !IsPet() && GetCreatureTemplate()->SkinLootId && hasLootRecipient())
@@ -3270,6 +3309,14 @@ bool Creature::IsEngaged() const
     if (CreatureAI const* ai = AI())
         return ai->IsEngaged();
     return false;
+}
+
+void Creature::AtEnterCombat()
+{
+    Unit::AtEnterCombat();
+
+    if (GetAI() && !IsControlledByPlayer())
+        SendAIReaction(AI_REACTION_HOSTILE);
 }
 
 void Creature::AtEngage(Unit* target)

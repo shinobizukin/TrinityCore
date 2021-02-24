@@ -1372,10 +1372,21 @@ void Unit::CalculateMeleeDamage(Unit* victim, uint32 damage, CalcDamageInfo* dam
         {
             damageInfo->HitInfo     |= HITINFO_GLANCING;
             damageInfo->TargetState  = VICTIMSTATE_HIT;
-            int32 leveldif = int32(victim->getLevel()) - int32(getLevel());
-            if (leveldif > 3)
+            int32 leveldif = int32(victim->getLevelForTarget(this)) - int32(getLevel());
+            if (leveldif < 0)
+            {
+                TC_LOG_DEBUG("entities.unit", "Unit::CalculateMeleeDamage: (Player) %s attacked %s. Glancing should never happen against lower level target", GetGUID().ToString().c_str(), victim->GetGUID().ToString().c_str());
+                break;
+            }
+            if (leveldif == 0)
+                leveldif = 1;
+            else if (leveldif > 3)
                 leveldif = 3;
-            float reducePercent = 1 - leveldif * 0.1f;
+
+            int32 const reductionMax = leveldif * 10;
+            int32 const reductionMin = std::max(1, reductionMax - 10);
+            float reducePercent = 1.f - irand(reductionMin, reductionMax) / 100.0f;
+
             damageInfo->cleanDamage += damageInfo->damage - uint32(reducePercent * damageInfo->damage);
             damageInfo->damage = uint32(reducePercent * damageInfo->damage);
             break;
@@ -2189,10 +2200,10 @@ MeleeHitOutcome Unit::RollMeleeOutcomeAgainst(const Unit* victim, WeaponAttackTy
     }
 
     // 4. GLANCING
-    // Max 40% chance to score a glancing blow against mobs that are higher level (can do only players and pets and not with ranged weapon)
+    // Max 40% chance to score a glancing blow against mobs of the same or higher level (only players and pets, not for ranged weapons).
     if ((GetTypeId() == TYPEID_PLAYER || IsPet()) &&
         victim->GetTypeId() != TYPEID_PLAYER && !victim->IsPet() &&
-        getLevel() < victim->getLevelForTarget(this))
+        getLevel() <= victim->getLevelForTarget(this))
     {
         // cap possible value (with bonuses > max skill)
         int32 skill = attackerMaxSkillValueForLevel;
@@ -5173,7 +5184,7 @@ void Unit::SendAttackStateUpdate(CalcDamageInfo* damageInfo)
     int32 overkill = damageInfo->damage - damageInfo->target->GetHealth();
     packet.OverDamage = (overkill < 0 ? -1 : overkill);
 
-    packet.SubDmg = boost::in_place();
+    packet.SubDmg.emplace();
     packet.SubDmg->SchoolMask = damageInfo->damageSchoolMask;   // School of sub damage
     packet.SubDmg->FDamage = damageInfo->damage;                // sub damage
     packet.SubDmg->Damage = damageInfo->damage;                 // Sub Damage
@@ -5586,8 +5597,6 @@ bool Unit::Attack(Unit* victim, bool meleeAttack)
     if (creature && !IsControlledByPlayer())
     {
         EngageWithTarget(victim); // ensure that anything we're attacking has threat
-
-        creature->SendAIReaction(AI_REACTION_HOSTILE);
         creature->CallAssistance();
 
         // Remove emote state - will be restored on creature reset
@@ -7202,24 +7211,10 @@ float Unit::SpellCritChanceTaken(Unit const* caster, SpellInfo const* spellInfo,
     return crit_bonus;
 }
 
-/*static*/ uint32 Unit::SpellCriticalHealingBonus(Unit const* caster, SpellInfo const* spellProto, uint32 damage)
+/*static*/ uint32 Unit::SpellCriticalHealingBonus(Unit const* caster, uint32 damage)
 {
-    // Calculate critical bonus
-    int32 crit_bonus;
-    switch (spellProto->DmgClass)
-    {
-        case SPELL_DAMAGE_CLASS_MELEE:                      // for melee based spells is 100%
-        case SPELL_DAMAGE_CLASS_RANGED:
-            /// @todo write here full calculation for melee/ranged spells
-            crit_bonus = damage;
-            break;
-        default:
-            crit_bonus = damage / 2;                        // for spells is 50%
-            break;
-    }
-
-    if (crit_bonus > 0)
-        damage += crit_bonus;
+    // As of Patch 4.2.0 (2011-06-28): all healing spells now crit for 200% instead of 150%
+    damage *= 2;
 
     if (caster)
         damage = int32(float(damage) * caster->GetTotalAuraMultiplier(SPELL_AURA_MOD_CRITICAL_HEALING_AMOUNT));
@@ -7690,7 +7685,7 @@ bool Unit::IsImmunedToSpell(SpellInfo const* spellInfo, Unit* caster, Optional<u
         if (!spellInfo->Effects[i].IsEffect())
             continue;
 
-        if (effectMask && !(effectMask.get() & (1 << i)))
+        if (effectMask && !(effectMask.value() & (1 << i)))
             continue;
 
         if (!IsImmunedToSpellEffect(spellInfo, i, caster))
@@ -8822,8 +8817,11 @@ void Unit::UpdateSpeed(UnitMoveType mtype)
         case MOVE_FLIGHT:
         {
             // Set creature speed rate
-            if (GetTypeId() == TYPEID_UNIT)
-                speed *= ToCreature()->GetCreatureTemplate()->speed_run;    // at this point, MOVE_WALK is never reached
+            if (IsCreature())
+            {
+                CreatureMovementInfo const& movementInfo = ToCreature()->GetCreatureMovementInfo();
+                speed *= movementInfo.HasRunSpeedOverriden ? (movementInfo.RunSpeed / baseMoveSpeed[MOVE_RUN]) : ToCreature()->GetCreatureTemplate()->speed_run;  // at this point, MOVE_WALK is never reached
+            }
 
             // Normalize speed by 191 aura SPELL_AURA_USE_NORMAL_MOVEMENT_SPEED if need
             /// @todo possible affect only on MOVE_RUN
@@ -8855,8 +8853,11 @@ void Unit::UpdateSpeed(UnitMoveType mtype)
     if (float minSpeedMod = (float)GetMaxPositiveAuraModifier(SPELL_AURA_MOD_MINIMUM_SPEED))
     {
         float baseMinSpeed = 1.0f;
-        if (!GetOwnerOrCreatorGUID().IsPlayer() && !IsHunterPet() && GetTypeId() == TYPEID_UNIT)
-            baseMinSpeed = ToCreature()->GetCreatureTemplate()->speed_run;
+        if (!GetOwnerOrCreatorGUID().IsPlayer() && !IsHunterPet() && IsCreature())
+        {
+            CreatureMovementInfo const& movementInfo = ToCreature()->GetCreatureMovementInfo();
+            baseMinSpeed = movementInfo.HasRunSpeedOverriden ? (movementInfo.RunSpeed / baseMoveSpeed[MOVE_RUN]) : ToCreature()->GetCreatureTemplate()->speed_run;
+        }
 
         float min_speed = CalculatePct(baseMinSpeed, minSpeedMod);
         if (speed < min_speed)
@@ -11845,7 +11846,7 @@ bool Unit::SetCharmedBy(Unit* charmer, CharmType type, AuraApplication const* au
         charmer->RemoveAurasByType(SPELL_AURA_MOUNTED);
 
     ASSERT(type != CHARM_TYPE_POSSESS || charmer->GetTypeId() == TYPEID_PLAYER);
-    ASSERT((type == CHARM_TYPE_VEHICLE) == IsVehicle());
+    ASSERT((type == CHARM_TYPE_VEHICLE) == (GetVehicleKit() && GetVehicleKit()->IsControllableVehicle()));
 
     TC_LOG_DEBUG("entities.unit", "SetCharmedBy: charmer %u (GUID %u), charmed %u (GUID %u), type %u.", charmer->GetEntry(), charmer->GetGUID().GetCounter(), GetEntry(), GetGUID().GetCounter(), uint32(type));
 

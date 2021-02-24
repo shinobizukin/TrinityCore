@@ -33,6 +33,154 @@
 #include "Transport.h"
 #include "halls_of_origination.h"
 
+enum SunTouchedServant
+{
+    // Texts
+    SAY_EMOTE_DISPERSE         = 0,
+
+    // Spells
+    SPELL_SEARING_FLAMES        = 74101,
+    SPELL_DISPERSE_SERVANT      = 88097,
+    SPELL_DISPERSE_SPRITE       = 88100,
+    SPELL_FLAME_DISPERSION      = 76160,
+    SPELL_PYROGENICS_SPRITE     = 76158,
+    SPELL_PYROGENICS_SPRITELING = 76159,
+
+    // Events
+    EVENT_SEARING_FLAMES        = 1
+};
+
+struct npc_sun_touched_servant : public ScriptedAI
+{
+    npc_sun_touched_servant(Creature* creature) : ScriptedAI(creature), _dispersed(false) { }
+
+    void JustAppeared() override
+    {
+        if (me->GetEntry() == NPC_SUN_TOUCHED_SERVANT)
+            return;
+
+        DoCastSelf(me->GetEntry() == NPC_SUN_TOUCHED_SPRITE ? SPELL_PYROGENICS_SPRITE : SPELL_PYROGENICS_SPRITELING);
+    }
+
+    void JustEngagedWith(Unit* /*who*/) override
+    {
+        _events.ScheduleEvent(EVENT_SEARING_FLAMES, 5s, 7s);
+    }
+
+    void EnterEvadeMode(EvadeReason why) override
+    {
+        ScriptedAI::EnterEvadeMode(why);
+        _events.Reset();
+    }
+
+    void DamageTaken(Unit* /*attacker*/, uint32& damage) override
+    {
+        if (me->GetEntry() == NPC_SUN_TOUCHED_SPRITELING)
+            return;
+
+        if (!_dispersed && me->HealthBelowPctDamaged(1, damage))
+        {
+            _dispersed = true;
+            DoCastSelf(me->GetEntry() == NPC_SUN_TOUCHED_SERVANT ? SPELL_DISPERSE_SERVANT : SPELL_DISPERSE_SPRITE);
+            Talk(SAY_EMOTE_DISPERSE);
+        }
+
+        if (damage >= me->GetHealth())
+            damage = me->GetHealth() - 1;
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        if (!UpdateVictim())
+            return;
+
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_SEARING_FLAMES:
+                    DoCastVictim(SPELL_SEARING_FLAMES);
+                    _events.Repeat(8s, 14s);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    EventMap _events;
+    bool _dispersed;
+};
+
+enum AggroStalker
+{
+    // Spells
+    SPELL_SUBMERGE  = 76084,
+    SPELL_EMERGE    = 75764
+};
+
+struct npc_hoo_aggro_stalker_base : public ScriptedAI
+{
+    npc_hoo_aggro_stalker_base(Creature* creature, uint8 summonGroupId) : ScriptedAI(creature), _summonGroupId(summonGroupId) { }
+
+    void InitializeAI() override
+    {
+        // Trigger creatures are passive by default but we need an aggressive one here.
+        me->SetReactState(REACT_AGGRESSIVE);
+    }
+
+    void JustAppeared() override
+    {
+        me->SummonCreatureGroup(_summonGroupId);
+    }
+
+    void AttackStart(Unit* /*who*/) override {  }
+
+    void JustEngagedWith(Unit* who) override
+    {
+        for (ObjectGuid const& guid : _summonGUIDs)
+        {
+            if (Creature* summon = ObjectAccessor::GetCreature(*me, guid))
+            {
+                summon->EngageWithTarget(who);
+                if (summon->HasAura(SPELL_SUBMERGE))
+                {
+                    summon->RemoveAurasDueToSpell(SPELL_SUBMERGE);
+                    summon->CastSpell(summon, SPELL_EMERGE);
+                }
+            }
+        }
+    }
+
+    void JustSummoned(Creature* summon) override
+    {
+        _summonGUIDs.insert(summon->GetGUID());
+        summon->CastSpell(summon, SPELL_SUBMERGE, true); // The spell has a cast time but we need them submerged immediately
+    }
+
+    void SummonedCreatureDies(Creature* summon, Unit* /*killer*/) override
+    {
+        _summonGUIDs.erase(summon->GetGUID());
+
+        // Group has been defeated, despawn aggro stalker.
+        if (_summonGUIDs.empty())
+            me->DespawnOrUnsummon();
+    }
+
+private:
+    uint8 _summonGroupId;
+    GuidSet _summonGUIDs;
+};
+
+struct npc_hoo_aggro_stalker_1 : public npc_hoo_aggro_stalker_base { npc_hoo_aggro_stalker_1(Creature* creature) : npc_hoo_aggro_stalker_base(creature, 0) { } };
+struct npc_hoo_aggro_stalker_2 : public npc_hoo_aggro_stalker_base { npc_hoo_aggro_stalker_2(Creature* creature) : npc_hoo_aggro_stalker_base(creature, 1) { } };
+struct npc_hoo_aggro_stalker_3 : public npc_hoo_aggro_stalker_base { npc_hoo_aggro_stalker_3(Creature* creature) : npc_hoo_aggro_stalker_base(creature, 2) { } };
+
 // The Maker's Lift
 enum ElevatorMisc
 {
@@ -102,10 +250,10 @@ class spell_hoo_flame_ring_visual : public SpellScript
             return;
 
         targets.remove_if([](WorldObject const* target)->bool
-            {
-                Unit const* unit = target->ToUnit();
-                return !unit || unit->GetEntry() != NPC_SUN_TOUCHED_SERVANT;
-            });
+        {
+            Unit const* unit = target->ToUnit();
+            return !unit || unit->GetEntry() != NPC_SUN_TOUCHED_SERVANT;
+        });
 
         if (targets.empty())
             return;
@@ -126,8 +274,59 @@ class spell_hoo_flame_ring_visual : public SpellScript
     }
 };
 
+class spell_hoo_disperse : public AuraScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_FLAME_DISPERSION });
+    }
+
+    void HandleDeath(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        Unit* target = GetTarget();
+        target->CastSpell(target, SPELL_FLAME_DISPERSION);
+        target->KillSelf(); // There is no suicide spell being shown in sniffs
+    }
+
+    void Register() override
+    {
+        AfterEffectRemove.Register(&spell_hoo_disperse::HandleDeath, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
+class spell_hoo_submerge : public AuraScript
+{
+    void HandleFlagsAfterApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        Unit* target = GetTarget();
+        target->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+        if (target->IsCreature())
+            target->ToCreature()->SetReactState(REACT_PASSIVE);
+    }
+
+    void HandleFlagsAfterRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        Unit* target = GetTarget();
+        GetTarget()->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+        if (target->IsCreature())
+            target->ToCreature()->SetReactState(REACT_AGGRESSIVE);
+    }
+
+    void Register() override
+    {
+        AfterEffectApply.Register(&spell_hoo_submerge::HandleFlagsAfterApply, EFFECT_0, SPELL_AURA_MOD_STUN, AURA_EFFECT_HANDLE_REAL);
+        AfterEffectRemove.Register(&spell_hoo_submerge::HandleFlagsAfterRemove, EFFECT_0, SPELL_AURA_MOD_STUN, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
 void AddSC_halls_of_origination()
 {
+    RegisterHallsOfOriginationCreatureAI(npc_sun_touched_servant);
+    RegisterHallsOfOriginationCreatureAI(npc_hoo_aggro_stalker_1);
+    RegisterHallsOfOriginationCreatureAI(npc_hoo_aggro_stalker_2);
+    RegisterHallsOfOriginationCreatureAI(npc_hoo_aggro_stalker_3);
     RegisterGameObjectAI(go_hoo_the_makers_lift_controller);
     RegisterSpellScript(spell_hoo_flame_ring_visual);
+    RegisterSpellScript(spell_hoo_disperse);
+    RegisterSpellScript(spell_hoo_submerge);
 }
