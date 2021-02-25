@@ -20,6 +20,7 @@
 #include "CreatureAI.h"
 #include "Log.h"
 #include "Player.h"
+#include "QuestDef.h"
 #include "Unit.h"
 
 class npc_test_creature : public CreatureScript
@@ -171,7 +172,7 @@ public:
         Optional<QuestGiverStatus> GetDialogStatus(Player* /*player*/) override
         {
             TC_LOG_DEBUG("scripts","Enter GetDialogStatus for npc_test_creature_ai"); 
-            return boost::none; 
+            return DIALOG_STATUS_NONE; 
         }
 
         // Called when a player opens a gossip dialog with the creature.
