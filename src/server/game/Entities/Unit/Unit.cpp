@@ -1058,6 +1058,7 @@ void Unit::CastStop(uint32 except_spellid)
 
 void Unit::CastSpell(SpellCastTargets const& targets, uint32 spellId, CastSpellExtraArgs const& args)
 {
+    TC_LOG_TRACE("entities.unit","Casting spell...");
     SpellInfo const* info = sSpellMgr->GetSpellInfo(spellId);
     if (!info)
     {
@@ -1066,11 +1067,15 @@ void Unit::CastSpell(SpellCastTargets const& targets, uint32 spellId, CastSpellE
     }
 
     Spell* spell = new Spell(this, info, args.TriggerFlags, args.OriginalCaster);
+    TC_LOG_TRACE("entities.unit","Spell initialized");
     for (auto const& pair : args.SpellValueOverrides)
         spell->SetSpellValue(pair.first, pair.second);
 
+    TC_LOG_TRACE("entities.unit","Spell overrides");
     spell->m_CastItem = args.CastItem;
+    TC_LOG_TRACE("entities.unit","set cast item");
     spell->prepare(targets, args.TriggeringAura);
+    TC_LOG_TRACE("entities.unit","Spell prepare");
 }
 
 void Unit::CastSpell(WorldObject* target, uint32 spellId, CastSpellExtraArgs const& args)
