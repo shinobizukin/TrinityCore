@@ -48,6 +48,10 @@ public:
         }
 
         // CreatureAI
+        void UpdateAI(uint32 diff) override
+        {
+            TC_LOG_DEBUG("scripts","Enter UpdateAI for npc_test_creature_ai diff: %u", diff);
+        }
         void JustStartedThreateningMe(Unit* who) override
         {
             TC_LOG_DEBUG("scripts","Enter JustStartedThreateningMe for npc_test_vehicle_ai"); 
@@ -113,15 +117,15 @@ public:
         }
 
         // Called when hit by a spell
-        void SpellHit(Unit* /*caster*/, SpellInfo const* /*spell*/) override
+        void SpellHit(Unit* /*caster*/, SpellInfo const* spell) override
         { 
-            TC_LOG_DEBUG("scripts","Enter SpellHit for npc_test_vehicle_ai");
+            TC_LOG_DEBUG("scripts","Enter SpellHit for npc_test_creature_ai spell: %u", spell->Id);
         }
 
         // Called when spell hits a target
-        void SpellHitTarget(Unit* /*target*/, SpellInfo const* /*spell*/) override
+        void SpellHitTarget(Unit* /*target*/, SpellInfo const* spell) override
         { 
-            TC_LOG_DEBUG("scripts","Enter SpellHitTarget for npc_test_vehicle_ai");
+            TC_LOG_DEBUG("scripts","Enter SpellHitTarget for npc_test_creature_ai spell: %u", spell->Id);
         }
 
         // Should return true if the NPC is currently being escorted
@@ -142,9 +146,9 @@ public:
             TC_LOG_DEBUG("scripts","Enter MovementInform for npc_test_vehicle_ai");
         }
 
-        void OnSpellCastFinished(SpellInfo const* /*spell*/, SpellFinishReason /*reason*/) override
+        void OnSpellCastFinished(SpellInfo const* spell, SpellFinishReason /*reason*/) override
         {  
-            TC_LOG_DEBUG("scripts","Enter OnSpellCastFinished for npc_test_vehicle_ai");
+            TC_LOG_DEBUG("scripts","Enter OnSpellCastFinished for npc_test_creature_ai spellId: %u", spell->Id);
         }
 
         // Called at reaching home after evade
@@ -194,9 +198,9 @@ public:
         }
 
         // Called when a player selects a gossip item in the creature's gossip menu.
-        bool GossipSelect(Player* /*player*/, uint32 /*menuId*/, uint32 /*gossipListId*/) override
+        bool GossipSelect(Player* /*player*/, uint32 menuId, uint32 /*gossipListId*/) override
         { 
-            TC_LOG_DEBUG("scripts","Enter GossipSelect for npc_test_vehicle_ai");
+            TC_LOG_DEBUG("scripts","Enter GossipSelect for npc_test_creature_ai menuId: %u", menuId);
             return false; 
         }
 
@@ -208,15 +212,15 @@ public:
         }
 
         // Called when a player accepts a quest from the creature.
-        void QuestAccept(Player* /*player*/, Quest const* /*quest*/) override
+        void QuestAccept(Player* /*player*/, Quest const* quest) override
         { 
-            TC_LOG_DEBUG("scripts","Enter QuestAccept for npc_test_vehicle_ai");
+            TC_LOG_DEBUG("scripts","Enter QuestAccept for npc_test_creature_ai, quest.Id: %u", quest->GetQuestId());
         }
 
         // Called when a player completes a quest and is rewarded, opt is the selected item's index or 0
-        void QuestReward(Player* /*player*/, Quest const* /*quest*/, uint32 /*opt*/) override
+        void QuestReward(Player* /*player*/, Quest const* quest, uint32 /*opt*/) override
         { 
-            TC_LOG_DEBUG("scripts","Enter QuestReward for npc_test_vehicle_ai");
+            TC_LOG_DEBUG("scripts","Enter QuestReward for npc_test_creature_ai, quest.Id: %u", quest->GetQuestId());
         }
 
         /// == Waypoints system =============================

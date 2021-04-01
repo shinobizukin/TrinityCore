@@ -21,6 +21,7 @@
 #include "Creature.h"
 #include "DBCStores.h"
 #include "Language.h"
+#include "Log.h"
 #include "Map.h"
 #include "MiscPackets.h"
 #include "ObjectMgr.h"
@@ -63,10 +64,12 @@ inline void ForAllControlled(Unit* unit, Func&& func)
 
 void PhasingHandler::AddPhase(WorldObject* object, uint32 phaseId, bool updateVisibility)
 {
+    TC_LOG_DEBUG("phase","Enter AddPhase with phaseId %u", phaseId);
     bool changed = object->GetPhaseShift().AddPhase(phaseId, GetPhaseFlags(phaseId), nullptr);
 
     if (Unit* unit = object->ToUnit())
     {
+        TC_LOG_DEBUG("phase","AddPhase WorldObject is a unit");
         unit->OnPhaseChange();
         ForAllControlled(unit, [&](Unit* controlled)
         {
@@ -120,6 +123,7 @@ void PhasingHandler::AddPhaseGroup(WorldObject* object, uint32 phaseGroupId, boo
 
 void PhasingHandler::RemovePhaseGroup(WorldObject* object, uint32 phaseGroupId, bool updateVisibility)
 {
+    TC_LOG_DEBUG("phase","Enter RemovePhaseGroup with phaseGroupId %u", phaseGroupId);
     std::vector<uint32> const* phasesInGroup = sDBCManager.GetPhasesForGroup(phaseGroupId);
     if (!phasesInGroup)
         return;
@@ -130,6 +134,7 @@ void PhasingHandler::RemovePhaseGroup(WorldObject* object, uint32 phaseGroupId, 
 
     if (Unit* unit = object->ToUnit())
     {
+        TC_LOG_DEBUG("phase","RemovePhaseGroup object is unit");
         unit->OnPhaseChange();
         ForAllControlled(unit, [&](Unit* controlled)
         {
@@ -560,13 +565,16 @@ std::string PhasingHandler::FormatPhases(PhaseShift const& phaseShift)
 
 void PhasingHandler::UpdateVisibilityIfNeeded(WorldObject* object, bool updateVisibility, bool changed)
 {
+    TC_LOG_DEBUG("phase","Enter UpdateVisibilityIfNeeded");
     if (changed && object->IsInWorld())
     {
+        TC_LOG_DEBUG("phase","UpdateVisibilityIfNeeded object is in world");
         if (Player* player = object->ToPlayer())
             SendToPlayer(player);
 
         if (updateVisibility)
         {
+            TC_LOG_DEBUG("phase","UpdateVisibilityIfNeeded updateVisibility true");
             if (Player* player = object->ToPlayer())
                 player->GetMap()->SendUpdateTransportVisibility(player);
 

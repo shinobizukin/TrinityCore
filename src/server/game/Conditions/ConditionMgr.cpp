@@ -136,16 +136,19 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo) const
     switch (ConditionType)
     {
         case CONDITION_NONE:
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_NONE");
             condMeets = true;                                    // empty condition, always met
             break;
         case CONDITION_AURA:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_AURA");
             if (Unit* unit = object->ToUnit())
                 condMeets = unit->HasAuraEffect(ConditionValue1, ConditionValue2);
             break;
         }
         case CONDITION_ITEM:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_ITEM");
             if (Player* player = object->ToPlayer())
             {
                 // don't allow 0 items (it's checked during table load)
@@ -157,15 +160,18 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo) const
         }
         case CONDITION_ITEM_EQUIPPED:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_ITEM_EQUIPPED");
             if (Player* player = object->ToPlayer())
                 condMeets = player->HasItemOrGemWithIdEquipped(ConditionValue1, 1);
             break;
         }
         case CONDITION_ZONEID:
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_ZONEID");
             condMeets = object->GetZoneId() == ConditionValue1;
             break;
         case CONDITION_REPUTATION_RANK:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_REPUTATION_RANK");
             if (Player* player = object->ToPlayer())
             {
                 if (FactionEntry const* faction = sFactionStore.LookupEntry(ConditionValue1))
@@ -175,6 +181,7 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo) const
         }
         case CONDITION_ACHIEVEMENT:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_ACHIEVEMENT");
             if (Player* player = object->ToPlayer())
             {
                 if (ConditionValue2 == 1)
@@ -186,42 +193,49 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo) const
         }
         case CONDITION_TEAM:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_TEAM");
             if (Player* player = object->ToPlayer())
                 condMeets = player->GetTeam() == ConditionValue1;
             break;
         }
         case CONDITION_CLASS:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_CLASS");
             if (Unit* unit = object->ToUnit())
                 condMeets = (unit->getClassMask() & ConditionValue1) != 0;
             break;
         }
         case CONDITION_RACE:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_RACE");
             if (Unit* unit = object->ToUnit())
                 condMeets = (unit->getRaceMask() & ConditionValue1) != 0;
             break;
         }
         case CONDITION_GENDER:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_GENDER");
             if (Player* player = object->ToPlayer())
                 condMeets = player->getGender() == ConditionValue1;
             break;
         }
         case CONDITION_SKILL:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_SKILL");
             if (Player* player = object->ToPlayer())
                 condMeets = player->HasSkill(ConditionValue1) && player->GetBaseSkillValue(ConditionValue1) >= ConditionValue2;
             break;
         }
         case CONDITION_QUESTREWARDED:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_QUESTREWARDED");
             if (Player* player = object->ToPlayer())
                 condMeets = player->GetQuestRewardStatus(ConditionValue1);
             break;
         }
         case CONDITION_QUESTTAKEN:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_QUESTTAKEN");
             if (Player* player = object->ToPlayer())
             {
                 QuestStatus status = player->GetQuestStatus(ConditionValue1);
@@ -231,6 +245,7 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo) const
         }
         case CONDITION_QUEST_COMPLETE:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_QUEST_COMPLETE");
             if (Player* player = object->ToPlayer())
             {
                 QuestStatus status = player->GetQuestStatus(ConditionValue1);
@@ -240,6 +255,7 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo) const
         }
         case CONDITION_QUEST_NONE:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_QUEST_NONE");
             if (Player* player = object->ToPlayer())
             {
                 QuestStatus status = player->GetQuestStatus(ConditionValue1);
@@ -248,10 +264,12 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo) const
             break;
         }
         case CONDITION_ACTIVE_EVENT:
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_ACTIVE_EVENT");
             condMeets = sGameEventMgr->IsActiveEvent(ConditionValue1);
             break;
         case CONDITION_INSTANCE_INFO:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_INSTANCE_INFO");
             Map* map = object->GetMap();
             if (map->IsDungeon())
             {
@@ -277,41 +295,49 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo) const
             break;
         }
         case CONDITION_MAPID:
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_MAPID");
             condMeets = object->GetMapId() == ConditionValue1;
             break;
         case CONDITION_AREAID:
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_AREAID");
             condMeets = object->GetAreaId() == ConditionValue1;
             break;
         case CONDITION_SPELL:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_SPELL");
             if (Player* player = object->ToPlayer())
                 condMeets = player->HasSpell(ConditionValue1);
             break;
         }
         case CONDITION_LEVEL:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_LEVEL");
             if (Unit* unit = object->ToUnit())
                 condMeets = CompareValues(static_cast<ComparisionType>(ConditionValue2), static_cast<uint32>(unit->getLevel()), ConditionValue1);
             break;
         }
         case CONDITION_DRUNKENSTATE:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_DRUNKENSTATE");
             if (Player* player = object->ToPlayer())
                 condMeets = (uint32)Player::GetDrunkenstateByValue(player->GetDrunkValue()) >= ConditionValue1;
             break;
         }
         case CONDITION_NEAR_CREATURE:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_NEAR_CREATURE");
             condMeets = object->FindNearestCreature(ConditionValue1, (float)ConditionValue2, bool(!ConditionValue3)) != nullptr;
             break;
         }
         case CONDITION_NEAR_GAMEOBJECT:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_NEAR_GAMEOBJECT");
             condMeets = object->FindNearestGameObject(ConditionValue1, (float)ConditionValue2) != nullptr;
             break;
         }
         case CONDITION_OBJECT_ENTRY_GUID:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_OBJECT_ENTRY_GUID");
             if (uint32(object->GetTypeId()) == ConditionValue1)
             {
                 condMeets = !ConditionValue2 || (object->GetEntry() == ConditionValue2);
@@ -335,11 +361,13 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo) const
         }
         case CONDITION_TYPE_MASK:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_TYPE_MASK");
             condMeets = object->isType(ConditionValue1);
             break;
         }
         case CONDITION_RELATION_TO:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_RELATION_TO");
             if (WorldObject* toObject = sourceInfo.mConditionTargets[ConditionValue1])
             {
                 Unit* toUnit = toObject->ToUnit();
@@ -375,6 +403,7 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo) const
         }
         case CONDITION_REACTION_TO:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_REACTION_TO");
             if (WorldObject* toObject = sourceInfo.mConditionTargets[ConditionValue1])
             {
                 Unit* toUnit = toObject->ToUnit();
@@ -386,68 +415,80 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo) const
         }
         case CONDITION_DISTANCE_TO:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_DISTANCE_TO");
             if (WorldObject* toObject = sourceInfo.mConditionTargets[ConditionValue1])
                 condMeets = CompareValues(static_cast<ComparisionType>(ConditionValue3), object->GetDistance(toObject), static_cast<float>(ConditionValue2));
             break;
         }
         case CONDITION_ALIVE:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_ALIVE");
             if (Unit* unit = object->ToUnit())
                 condMeets = unit->IsAlive();
             break;
         }
         case CONDITION_HP_VAL:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_HP_VAL");
             if (Unit* unit = object->ToUnit())
                 condMeets = CompareValues(static_cast<ComparisionType>(ConditionValue2), unit->GetHealth(), static_cast<uint32>(ConditionValue1));
             break;
         }
         case CONDITION_HP_PCT:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_HP_PCT");
             if (Unit* unit = object->ToUnit())
                 condMeets = CompareValues(static_cast<ComparisionType>(ConditionValue2), unit->GetHealthPct(), static_cast<float>(ConditionValue1));
             break;
         }
         case CONDITION_WORLD_STATE:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_WORLD_STATE");
             condMeets = ConditionValue2 == sWorld->getWorldState(ConditionValue1);
             break;
         }
         case CONDITION_PHASEID:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_PHASEID");
             condMeets = object->GetPhaseShift().HasPhase(ConditionValue1);
             break;
         }
         case CONDITION_TITLE:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_TITLE");
             if (Player* player = object->ToPlayer())
                 condMeets = player->HasTitle(ConditionValue1);
             break;
         }
         case CONDITION_SPAWNMASK:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_SPAWNMASK");
             condMeets = ((1 << object->GetMap()->GetSpawnMode()) & ConditionValue1) != 0;
             break;
         }
         case CONDITION_UNIT_STATE:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_UNIT_STATE");
             if (Unit* unit = object->ToUnit())
                 condMeets = unit->HasUnitState(ConditionValue1);
             break;
         }
         case CONDITION_CREATURE_TYPE:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_CREATURE_TYPE");
             if (Creature* creature = object->ToCreature())
                 condMeets = creature->GetCreatureTemplate()->type == ConditionValue1;
             break;
         }
         case CONDITION_TERRAIN_SWAP:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_TERRAIN_SWAP");
             condMeets = object->GetPhaseShift().HasVisibleMapId(ConditionValue1);
             break;
         }
         case CONDITION_REALM_ACHIEVEMENT:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_REALM_ACHIEVEMENT");
             AchievementEntry const* achievement = sAchievementMgr->GetAchievement(ConditionValue1);
             if (achievement && sAchievementMgr->IsRealmCompleted(achievement, std::numeric_limits<uint32>::max()))
                 condMeets = true;
@@ -455,12 +496,14 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo) const
         }
         case CONDITION_IN_WATER:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_IN_WATER");
             if (Unit* unit = object->ToUnit())
                 condMeets = unit->IsInWater();
             break;
         }
         case CONDITION_STAND_STATE:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_STAND_STATE");
             if (Unit* unit = object->ToUnit())
             {
                 if (ConditionValue1 == 0)
@@ -474,18 +517,21 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo) const
         }
         case CONDITION_DAILY_QUEST_DONE:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_DAILY_QUEST_DONE");
             if (Player* player = object->ToPlayer())
                 condMeets = player->IsDailyQuestDone(ConditionValue1);
             break;
         }
         case CONDITION_CHARMED:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_CHARMED");
             if (Unit* unit = object->ToUnit())
                 condMeets = unit->IsCharmed();
             break;
         }
         case CONDITION_PET_TYPE:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_PET_TYPE");
             if (Player* player = object->ToPlayer())
                 if (Pet* pet = player->GetPet())
                     condMeets = (((1 << pet->getPetType()) & ConditionValue1) != 0);
@@ -493,12 +539,14 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo) const
         }
         case CONDITION_TAXI:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_TAXI");
             if (Player* player = object->ToPlayer())
                 condMeets = player->IsInFlight();
             break;
         }
         case CONDITION_QUESTSTATE:
         {
+            TC_LOG_DEBUG("condition", "Condition::Meets CONDITION_QUESTSTATE");
             if (Player* player = object->ToPlayer())
             {
                 if (
@@ -520,8 +568,12 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo) const
     if (NegativeCondition)
         condMeets = !condMeets;
 
-    if (!condMeets)
+    if (!condMeets) {
+        TC_LOG_DEBUG("condition", "Condition::Meets failed");
         sourceInfo.mLastFailedCondition = this;
+    } else {
+        TC_LOG_DEBUG("condition", "Condition::Meets passed");
+    }
 
     bool script = sScriptMgr->OnConditionCheck(this, sourceInfo); // Returns true by default.
     return condMeets && script;

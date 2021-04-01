@@ -217,18 +217,23 @@ void SmartScript::ProcessEventsFor(SMART_EVENT e, Unit* unit, uint32 var0, uint3
 {
     for (SmartAIEventList::iterator i = mEvents.begin(); i != mEvents.end(); ++i)
     {
+        TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEventsFor entryOrGuid %i", i->entryOrGuid);
         SMART_EVENT eventType = SMART_EVENT(i->GetEventType());
         if (eventType == SMART_EVENT_LINK)//special handling
             continue;
 
-        if (eventType == e)
+        if (eventType == e) 
+        {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEventsFor checking IsObjectMeetingSmartEventConditions");
             if (sConditionMgr->IsObjectMeetingSmartEventConditions(i->entryOrGuid, i->event_id, i->source_type, unit, GetBaseObject()))
                 ProcessEvent(*i, unit, var0, var1, bvar, spell, gob);
+        }
     }
 }
 
 void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, uint32 var1, bool bvar, SpellInfo const* spell, GameObject* gob)
 {
+    TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessAction event_type %u, action_type %u, target_type %u",e.GetEventType(),e.GetActionType(),e.GetTargetType());
     //calc random
     if (e.GetEventType() != SMART_EVENT_LINK && e.event.event_chance < 100 && e.event.event_chance)
     {
@@ -250,6 +255,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
     {
         case SMART_ACTION_TALK:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_TALK");
             Creature* talker = e.target.type == 0 ? me : nullptr;
             Unit* talkTarget = nullptr;
 
@@ -291,6 +297,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SIMPLE_TALK:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SIMPLE_TALK");
             for (WorldObject* target : targets)
             {
                 if (IsCreature(target))
@@ -307,6 +314,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_PLAY_EMOTE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_PLAY_EMOTE");
             for (WorldObject* target : targets)
             {
                 if (IsUnit(target))
@@ -320,6 +328,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SOUND:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SOUND");
             for (WorldObject* target : targets)
             {
                 if (IsUnit(target))
@@ -337,6 +346,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_FACTION:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_FACTION");
             for (WorldObject* target : targets)
             {
                 if (IsCreature(target))
@@ -365,6 +375,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_MORPH_TO_ENTRY_OR_MODEL:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_MORPH_TO_ENTRY_OR_MODEL");
             for (WorldObject* target : targets)
             {
                 if (!IsCreature(target))
@@ -402,6 +413,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_FAIL_QUEST:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_FAIL_QUEST");
             for (WorldObject* target : targets)
             {
                 if (IsPlayer(target))
@@ -415,6 +427,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_OFFER_QUEST:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_OFFER_QUEST");
             for (WorldObject* target : targets)
             {
                 if (Player* pTarget = target->ToPlayer())
@@ -445,6 +458,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_REACT_STATE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_REACT_STATE");
             for (WorldObject* target : targets)
             {
                 if (!IsCreature(target))
@@ -456,6 +470,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_RANDOM_EMOTE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_RANDOM_EMOTE");
             uint32 emotes[SMART_ACTION_PARAM_COUNT];
             emotes[0] = e.action.randomEmote.emote1;
             emotes[1] = e.action.randomEmote.emote2;
@@ -491,6 +506,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_THREAT_ALL_PCT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_THREAT_ALL_PCT");
             if (!me)
                 break;
 
@@ -504,6 +520,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_THREAT_SINGLE_PCT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_THREAT_SINGLE_PCT");
             if (!me)
                 break;
 
@@ -520,6 +537,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_CALL_AREAEXPLOREDOREVENTHAPPENS:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_CALL_AREAEXPLOREDOREVENTHAPPENS");
             for (WorldObject* target : targets)
             {
                 // Special handling for vehicles
@@ -541,6 +559,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_CAST:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_CAST");
             if (targets.empty())
                 break;
 
@@ -605,6 +624,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SELF_CAST:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SELF_CAST");
             if (targets.empty())
                 break;
 
@@ -638,6 +658,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_INVOKER_CAST:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_INVOKER_CAST");
             Unit* tempLastInvoker = GetLastInvoker(unit);
             if (!tempLastInvoker)
                 break;
@@ -678,6 +699,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_ADD_AURA:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_ADD_AURA");
             for (WorldObject* target : targets)
             {
                 if (IsUnit(target))
@@ -691,6 +713,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_ACTIVATE_GOBJECT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_ACTIVATE_GOBJECT");
             for (WorldObject* target : targets)
             {
                 if (IsGameObject(target))
@@ -706,6 +729,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_RESET_GOBJECT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_RESET_GOBJECT");
             for (WorldObject* target : targets)
             {
                 if (IsGameObject(target))
@@ -719,6 +743,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_EMOTE_STATE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_EMOTE_STATE");
             for (WorldObject* target : targets)
             {
                 if (IsUnit(target))
@@ -732,6 +757,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_UNIT_FLAG:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_UNIT_FLAG");
             for (WorldObject* target : targets)
             {
                 if (IsUnit(target))
@@ -754,6 +780,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_REMOVE_UNIT_FLAG:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_REMOVE_UNIT_FLAG");
             for (WorldObject* target : targets)
             {
                 if (IsUnit(target))
@@ -776,6 +803,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_AUTO_ATTACK:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_AUTO_ATTACK");
             if (!IsSmart())
                 break;
 
@@ -786,6 +814,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_ALLOW_COMBAT_MOVEMENT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_ALLOW_COMBAT_MOVEMENT");
             if (!IsSmart())
                 break;
 
@@ -797,6 +826,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_EVENT_PHASE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_EVENT_PHASE");
             if (!GetBaseObject())
                 break;
 
@@ -807,6 +837,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_INC_EVENT_PHASE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_INC_EVENT_PHASE");
             if (!GetBaseObject())
                 break;
 
@@ -818,6 +849,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_EVADE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_EVADE");
             if (!me)
                 break;
 
@@ -827,6 +859,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_FLEE_FOR_ASSIST:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_FLEE_FOR_ASSIST");
             if (!me)
                 break;
 
@@ -842,6 +875,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_CALL_GROUPEVENTHAPPENS:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_CALL_GROUPEVENTHAPPENS");
             if (!unit)
                 break;
 
@@ -863,6 +897,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_COMBAT_STOP:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_COMBAT_STOP");
             if (!me)
                 break;
 
@@ -872,13 +907,17 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_REMOVEAURASFROMSPELL:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_REMOVEAURASFROMSPELL enter case %u",0);
             for (WorldObject* target : targets)
             {
+                TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_REMOVEAURASFROMSPELL has target %u",0);
                 if (!IsUnit(target))
                     continue;
 
+                TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_REMOVEAURASFROMSPELL target is unit %u",0);
                 if (e.action.removeAura.spell)
                 {
+                    TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_REMOVEAURASFROMSPELL has spell %u",0);
                     if (e.action.removeAura.charges)
                     {
                         if (Aura* aur = target->ToUnit()->GetAura(e.action.removeAura.spell))
@@ -897,6 +936,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_FOLLOW:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_FOLLOW");
             if (!IsSmart())
                 break;
 
@@ -921,6 +961,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_RANDOM_PHASE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_RANDOM_PHASE");
             if (!GetBaseObject())
                 break;
 
@@ -936,6 +977,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_RANDOM_PHASE_RANGE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_RANDOM_PHASE_RANGE");
             if (!GetBaseObject())
                 break;
 
@@ -947,6 +989,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_CALL_KILLEDMONSTER:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_CALL_KILLEDMONSTER");
             if (e.target.type == SMART_TARGET_NONE || e.target.type == SMART_TARGET_SELF) // Loot recipient and his group members
             {
                 if (!me)
@@ -980,6 +1023,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_INST_DATA:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_INST_DATA");
             WorldObject* obj = GetBaseObject();
             if (!obj)
                 obj = unit;
@@ -1013,6 +1057,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_INST_DATA64:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_INST_DATA64");
             WorldObject* obj = GetBaseObject();
             if (!obj)
                 obj = unit;
@@ -1037,6 +1082,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_UPDATE_TEMPLATE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_UPDATE_TEMPLATE");
             for (WorldObject* target : targets)
                 if (IsCreature(target))
                     target->ToCreature()->UpdateEntry(e.action.updateTemplate.creature, target->ToCreature()->GetCreatureData(), e.action.updateTemplate.updateLevel != 0);
@@ -1045,6 +1091,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_DIE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_DIE");
             if (me && !me->isDead())
             {
                 me->KillSelf();
@@ -1054,6 +1101,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_IN_COMBAT_WITH_ZONE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_IN_COMBAT_WITH_ZONE");
             if (me && me->IsAIEnabled)
             {
                 me->AI()->DoZoneInCombat();
@@ -1063,6 +1111,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_CALL_FOR_HELP:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_CALL_FOR_HELP");
             if (me)
             {
                 me->CallForHelp(float(e.action.callHelp.range));
@@ -1077,6 +1126,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_SHEATH:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_SHEATH");
             if (me)
             {
                 me->SetSheath(SheathState(e.action.setSheath.sheath));
@@ -1087,6 +1137,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_FORCE_DESPAWN:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_FORCE_DESPAWN");
             // there should be at least a world update tick before despawn, to avoid breaking linked actions
             Milliseconds despawnDelay(e.action.forceDespawn.delay);
             if (despawnDelay <= 0ms)
@@ -1105,6 +1156,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_INGAME_PHASE_ID:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_INGAME_PHASE_ID");
             for (WorldObject* target : targets)
             {
                 if (e.action.ingamePhaseId.apply == 1)
@@ -1116,6 +1168,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_INGAME_PHASE_GROUP:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_INGAME_PHASE_GROUP");
             for (WorldObject* target : targets)
             {
                 if (e.action.ingamePhaseGroup.apply == 1)
@@ -1127,6 +1180,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_MOUNT_TO_ENTRY_OR_MODEL:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_MOUNT_TO_ENTRY_OR_MODEL");
             for (WorldObject* target : targets)
             {
                 if (!IsUnit(target))
@@ -1149,6 +1203,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_INVINCIBILITY_HP_LEVEL:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_INVINCIBILITY_HP_LEVEL");
             for (WorldObject* target : targets)
             {
                 if (IsCreature(target))
@@ -1167,6 +1222,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_DATA:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_DATA");
             for (WorldObject* target : targets)
             {
                 if (Creature* cTarget = target->ToCreature())
@@ -1190,6 +1246,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_ATTACK_STOP:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_ATTACK_STOP");
             for (WorldObject* target : targets)
                 if (Unit* unitTarget = target->ToUnit())
                     unitTarget->AttackStop();
@@ -1197,6 +1254,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_MOVE_OFFSET:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_MOVE_OFFSET");
             for (WorldObject* target : targets)
             {
                 if (!IsCreature(target))
@@ -1221,6 +1279,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_VISIBILITY:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_VISIBILITY");
             for (WorldObject* target : targets)
                 if (IsUnit(target))
                     target->ToUnit()->SetVisible(e.action.visibility.state ? true : false);
@@ -1229,6 +1288,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_ACTIVE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_ACTIVE");
             for (WorldObject* target : targets)
                 target->setActive(e.action.active.state ? true : false);
 
@@ -1236,6 +1296,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_ATTACK_START:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_ATTACK_START");
             if (!me)
                 break;
 
@@ -1249,6 +1310,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SUMMON_CREATURE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SUMMON_CREATURE");
 
             float x, y, z, o;
             for (WorldObject* target : targets)
@@ -1273,6 +1335,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SUMMON_GO:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SUMMON_GO");
             if (!GetBaseObject())
                 break;
 
@@ -1292,6 +1355,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_KILL_UNIT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_KILL_UNIT");
             for (WorldObject* target : targets)
             {
                 if (!IsUnit(target))
@@ -1303,11 +1367,13 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_INSTALL_AI_TEMPLATE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_INSTALL_AI_TEMPLATE");
             InstallTemplate(e);
             break;
         }
         case SMART_ACTION_ADD_ITEM:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_ADD_ITEM");
             for (WorldObject* target : targets)
             {
                 if (!IsPlayer(target))
@@ -1319,6 +1385,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_REMOVE_ITEM:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_REMOVE_ITEM");
             for (WorldObject* target : targets)
             {
                 if (!IsPlayer(target))
@@ -1330,11 +1397,13 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_STORE_TARGET_LIST:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_STORE_TARGET_LIST");
             StoreTargetList(targets, e.action.storeTargets.id);
             break;
         }
         case SMART_ACTION_TELEPORT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_TELEPORT");
             for (WorldObject* target : targets)
             {
                 if (IsPlayer(target))
@@ -1346,6 +1415,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_DISABLE_GRAVITY:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_DISABLE_GRAVITY");
             if (!IsSmart())
                 break;
 
@@ -1354,6 +1424,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_CAN_FLY:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_CAN_FLY");
             if (!IsSmart())
                 break;
 
@@ -1362,6 +1433,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_RUN:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_RUN");
             if (!IsSmart())
                 break;
 
@@ -1370,6 +1442,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_SWIM:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_SWIM");
             if (!IsSmart())
                 break;
 
@@ -1378,6 +1451,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_COUNTER:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_COUNTER");
             if (!targets.empty())
             {
                 for (WorldObject* target : targets)
@@ -1404,6 +1478,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_WP_START:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_WP_START");
             if (!IsSmart())
                 break;
 
@@ -1432,6 +1507,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_WP_PAUSE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_WP_PAUSE");
             if (!IsSmart())
                 break;
 
@@ -1441,6 +1517,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_WP_STOP:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_WP_STOP");
             if (!IsSmart())
                 break;
 
@@ -1452,6 +1529,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_WP_RESUME:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_WP_RESUME");
             if (!IsSmart())
                 break;
 
@@ -1460,6 +1538,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_ORIENTATION:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_ORIENTATION");
             if (!me)
                 break;
 
@@ -1473,6 +1552,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_PLAYMOVIE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_PLAYMOVIE");
             for (WorldObject* target : targets)
             {
                 if (!IsPlayer(target))
@@ -1484,6 +1564,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_MOVE_TO_POS:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_MOVE_TO_POS");
             if (!IsSmart())
                 break;
 
@@ -1525,6 +1606,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_ENABLE_TEMP_GOBJ:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_ENABLE_TEMP_GOBJ");
             for (WorldObject* target : targets)
             {
                 if (IsCreature(target))
@@ -1541,6 +1623,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_CLOSE_GOSSIP:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_CLOSE_GOSSIP");
             for (WorldObject* target : targets)
                 if (IsPlayer(target))
                     target->ToPlayer()->PlayerTalkClass->SendCloseGossip();
@@ -1549,6 +1632,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_EQUIP:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_EQUIP");
             for (WorldObject* target : targets)
             {
                 if (Creature* npc = target->ToCreature())
@@ -1587,6 +1671,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_CREATE_TIMED_EVENT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_CREATE_TIMED_EVENT");
             SmartEvent ne = SmartEvent();
             ne.type = (SMART_EVENT)SMART_EVENT_UPDATE;
             ne.event_chance = e.action.timeEvent.chance;
@@ -1615,6 +1700,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
             break;
         }
         case SMART_ACTION_TRIGGER_TIMED_EVENT:
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_TRIGGER_TIMED_EVENT");
             ProcessEventsFor((SMART_EVENT)SMART_EVENT_TIMED_EVENT_TRIGGERED, nullptr, e.action.timeEvent.id);
 
             // remove this event if not repeatable
@@ -1622,10 +1708,12 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
                 mRemIDs.push_back(e.action.timeEvent.id);
             break;
         case SMART_ACTION_REMOVE_TIMED_EVENT:
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_REMOVE_TIMED_EVENT");
             mRemIDs.push_back(e.action.timeEvent.id);
             break;
         case SMART_ACTION_OVERRIDE_SCRIPT_BASE_OBJECT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_OVERRIDE_SCRIPT_BASE_OBJECT");
             for (WorldObject* target : targets)
             {
                 if (IsCreature(target))
@@ -1652,14 +1740,17 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
             break;
         }
         case SMART_ACTION_RESET_SCRIPT_BASE_OBJECT:
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_RESET_SCRIPT_BASE_OBJECT");
             ResetBaseObject();
             break;
         case SMART_ACTION_CALL_SCRIPT_RESET:
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_CALL_SCRIPT_RESET");
             SetPhase(0);
             OnReset();
             break;
         case SMART_ACTION_SET_RANGED_MOVEMENT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_RANGED_MOVEMENT");
             if (!IsSmart())
                 break;
 
@@ -1676,6 +1767,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_CALL_TIMED_ACTIONLIST:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_CALL_TIMED_ACTIONLIST");
             if (e.GetTargetType() == SMART_TARGET_NONE)
             {
                 TC_LOG_ERROR("sql.sql", "SmartScript: Entry %d SourceType %u Event %u Action %u is using TARGET_NONE(0) for Script9 target. Please correct target_type in database.", e.entryOrGuid, e.GetScriptType(), e.GetEventType(), e.GetActionType());
@@ -1699,6 +1791,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_NPC_FLAG:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_NPC_FLAG");
             for (WorldObject* target : targets)
                 if (IsCreature(target))
                     target->ToUnit()->SetUInt32Value(UNIT_NPC_FLAGS, e.action.unitFlag.flag);
@@ -1707,6 +1800,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_ADD_NPC_FLAG:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_ADD_NPC_FLAG");
             for (WorldObject* target : targets)
                 if (IsCreature(target))
                     target->ToUnit()->SetFlag(UNIT_NPC_FLAGS, e.action.unitFlag.flag);
@@ -1715,6 +1809,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_REMOVE_NPC_FLAG:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_REMOVE_NPC_FLAG");
             for (WorldObject* target : targets)
                 if (IsCreature(target))
                     target->ToUnit()->RemoveFlag(UNIT_NPC_FLAGS, e.action.unitFlag.flag);
@@ -1723,6 +1818,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_CROSS_CAST:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_CROSS_CAST");
             if (targets.empty())
                 break;
 
@@ -1761,6 +1857,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_CALL_RANDOM_TIMED_ACTIONLIST:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_CALL_RANDOM_TIMED_ACTIONLIST");
             std::vector<uint32> actionLists;
             std::copy_if(std::begin(e.action.randTimedActionList.actionLists), std::end(e.action.randTimedActionList.actionLists),
                 std::back_inserter(actionLists), [](uint32 actionList) { return actionList != 0; });
@@ -1789,6 +1886,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_CALL_RANDOM_RANGE_TIMED_ACTIONLIST:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_CALL_RANDOM_RANGE_TIMED_ACTIONLIST");
             uint32 id = urand(e.action.randTimedActionList.actionLists[0], e.action.randTimedActionList.actionLists[1]);
             if (e.GetTargetType() == SMART_TARGET_NONE)
             {
@@ -1813,6 +1911,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_ACTIVATE_TAXI:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_ACTIVATE_TAXI");
             for (WorldObject* target : targets)
                 if (IsPlayer(target))
                     target->ToPlayer()->ActivateTaxiPathTo(e.action.taxi.id);
@@ -1821,6 +1920,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_RANDOM_MOVE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_RANDOM_MOVE");
             bool foundTarget = false;
 
             for (WorldObject* target : targets)
@@ -1847,6 +1947,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_UNIT_FIELD_BYTES_1:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_UNIT_FIELD_BYTES_1");
             for (WorldObject* target : targets)
                 if (IsUnit(target))
                     target->ToUnit()->SetByteFlag(UNIT_FIELD_BYTES_1, e.action.setunitByte.type, e.action.setunitByte.byte1);
@@ -1855,6 +1956,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_REMOVE_UNIT_FIELD_BYTES_1:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_REMOVE_UNIT_FIELD_BYTES_1");
             for (WorldObject* target : targets)
                 if (IsUnit(target))
                     target->ToUnit()->RemoveByteFlag(UNIT_FIELD_BYTES_1, e.action.delunitByte.type, e.action.delunitByte.byte1);
@@ -1863,6 +1965,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_INTERRUPT_SPELL:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_INTERRUPT_SPELL");
             for (WorldObject* target : targets)
                 if (IsUnit(target))
                     target->ToUnit()->InterruptNonMeleeSpells(e.action.interruptSpellCasting.withDelayed != 0, e.action.interruptSpellCasting.spell_id, e.action.interruptSpellCasting.withInstant != 0);
@@ -1871,6 +1974,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SEND_GO_CUSTOM_ANIM:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SEND_GO_CUSTOM_ANIM");
             for (WorldObject* target : targets)
                 if (IsGameObject(target))
                     target->ToGameObject()->SendCustomAnim(e.action.sendGoCustomAnim.anim);
@@ -1879,6 +1983,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_DYNAMIC_FLAG:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_DYNAMIC_FLAG");
             for (WorldObject* target : targets)
                 if (IsUnit(target))
                     target->ToUnit()->SetUInt32Value(UNIT_DYNAMIC_FLAGS, e.action.unitFlag.flag);
@@ -1887,6 +1992,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_ADD_DYNAMIC_FLAG:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_ADD_DYNAMIC_FLAG");
             for (WorldObject* target : targets)
                 if (IsUnit(target))
                     target->ToUnit()->SetFlag(UNIT_DYNAMIC_FLAGS, e.action.unitFlag.flag);
@@ -1895,6 +2001,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_REMOVE_DYNAMIC_FLAG:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_REMOVE_DYNAMIC_FLAG");
             for (WorldObject* target : targets)
                 if (IsUnit(target))
                     target->ToUnit()->RemoveFlag(UNIT_DYNAMIC_FLAGS, e.action.unitFlag.flag);
@@ -1903,6 +2010,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_JUMP_TO_POS:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_JUMP_TO_POS");
             for (WorldObject* target : targets)
             {
                 if (Creature* creature = target->ToCreature())
@@ -1913,6 +2021,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_GO_SET_LOOT_STATE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_GO_SET_LOOT_STATE");
             for (WorldObject* target : targets)
                 if (IsGameObject(target))
                     target->ToGameObject()->SetLootState((LootState)e.action.setGoLootState.state);
@@ -1921,6 +2030,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_GO_SET_GO_STATE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_GO_SET_GO_STATE");
             for (WorldObject* target : targets)
                 if (IsGameObject(target))
                     target->ToGameObject()->SetGoState((GOState)e.action.goState.state);
@@ -1929,6 +2039,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SEND_TARGET_TO_TARGET:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SEND_TARGET_TO_TARGET");
             WorldObject* ref = GetBaseObject();
             if (!ref)
                 ref = unit;
@@ -1961,6 +2072,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SEND_GOSSIP_MENU:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SEND_GOSSIP_MENU");
             if (!GetBaseObject() || !IsSmart())
                 break;
 
@@ -1989,6 +2101,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_HOME_POS:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_HOME_POS");
             for (WorldObject* target : targets)
             {
                 if (IsCreature(target))
@@ -2015,6 +2128,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_HEALTH_REGEN:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_HEALTH_REGEN");
             for (WorldObject* target : targets)
                 if (IsCreature(target))
                     target->ToCreature()->setRegeneratingHealth(e.action.setHealthRegen.regenHealth != 0);
@@ -2023,6 +2137,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_ROOT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_ROOT");
             for (WorldObject* target : targets)
                 if (IsCreature(target))
                     target->ToCreature()->SetControlled(e.action.setRoot.root != 0, UNIT_STATE_ROOT);
@@ -2031,6 +2146,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_GO_FLAG:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_GO_FLAG");
             for (WorldObject* target : targets)
                 if (IsGameObject(target))
                     target->ToGameObject()->SetUInt32Value(GAMEOBJECT_FLAGS, e.action.goFlag.flag);
@@ -2039,6 +2155,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_ADD_GO_FLAG:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_ADD_GO_FLAG");
             for (WorldObject* target : targets)
                 if (IsGameObject(target))
                     target->ToGameObject()->SetFlag(GAMEOBJECT_FLAGS, e.action.goFlag.flag);
@@ -2047,6 +2164,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_REMOVE_GO_FLAG:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_REMOVE_GO_FLAG");
             for (WorldObject* target : targets)
                 if (IsGameObject(target))
                     target->ToGameObject()->RemoveFlag(GAMEOBJECT_FLAGS, e.action.goFlag.flag);
@@ -2055,6 +2173,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SUMMON_CREATURE_GROUP:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SUMMON_CREATURE_GROUP");
             std::list<TempSummon*> summonList;
             GetBaseObject()->SummonCreatureGroup(e.action.creatureGroup.group, &summonList);
 
@@ -2066,6 +2185,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_POWER:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_POWER");
             for (WorldObject* target : targets)
                 if (IsUnit(target))
                     target->ToUnit()->SetPower(Powers(e.action.power.powerType), e.action.power.newPower);
@@ -2074,6 +2194,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_ADD_POWER:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_ADD_POWER");
             for (WorldObject* target : targets)
                 if (IsUnit(target))
                     target->ToUnit()->SetPower(Powers(e.action.power.powerType), target->ToUnit()->GetPower(Powers(e.action.power.powerType)) + e.action.power.newPower);
@@ -2082,6 +2203,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_REMOVE_POWER:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_REMOVE_POWER");
             for (WorldObject* target : targets)
                 if (IsUnit(target))
                     target->ToUnit()->SetPower(Powers(e.action.power.powerType), target->ToUnit()->GetPower(Powers(e.action.power.powerType)) - e.action.power.newPower);
@@ -2090,6 +2212,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_GAME_EVENT_STOP:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_GAME_EVENT_STOP");
             uint32 eventId = e.action.gameEventStop.id;
             if (!sGameEventMgr->IsActiveEvent(eventId))
             {
@@ -2101,6 +2224,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_GAME_EVENT_START:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_GAME_EVENT_START");
             uint32 eventId = e.action.gameEventStart.id;
             if (sGameEventMgr->IsActiveEvent(eventId))
             {
@@ -2112,6 +2236,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_START_CLOSEST_WAYPOINT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_START_CLOSEST_WAYPOINT");
             std::vector<uint32> waypoints;
             std::copy_if(std::begin(e.action.closestWaypointFromList.wps), std::end(e.action.closestWaypointFromList.wps),
                 std::back_inserter(waypoints), [](uint32 wp) { return wp != 0; });
@@ -2153,6 +2278,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_RANDOM_SOUND:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_RANDOM_SOUND");
             std::vector<uint32> sounds;
             std::copy_if(std::begin(e.action.randomSound.sounds), std::end(e.action.randomSound.sounds),
                 std::back_inserter(sounds), [](uint32 sound) { return sound != 0; });
@@ -2177,6 +2303,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_CORPSE_DELAY:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_CORPSE_DELAY");
             for (WorldObject* target : targets)
                 if (IsCreature(target))
                     target->ToCreature()->SetCorpseDelay(e.action.corpseDelay.timer);
@@ -2185,6 +2312,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SPAWN_SPAWNGROUP:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SPAWN_SPAWNGROUP");
             if (e.action.groupSpawn.minDelay == 0 && e.action.groupSpawn.maxDelay == 0)
             {
                 bool const ignoreRespawn = ((e.action.groupSpawn.spawnflags & SMARTAI_SPAWN_FLAGS::SMARTAI_SPAWN_FLAG_IGNORE_RESPAWN) != 0);
@@ -2228,6 +2356,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_DESPAWN_SPAWNGROUP:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_DESPAWN_SPAWNGROUP");
             if (e.action.groupSpawn.minDelay == 0 && e.action.groupSpawn.maxDelay == 0)
             {
                 bool const deleteRespawnTimes = ((e.action.groupSpawn.spawnflags & SMARTAI_SPAWN_FLAGS::SMARTAI_SPAWN_FLAG_NOSAVE_RESPAWN) != 0);
@@ -2270,6 +2399,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_DISABLE_EVADE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_DISABLE_EVADE");
             if (!IsSmart())
                 break;
 
@@ -2278,6 +2408,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_PLAY_ANIMKIT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_PLAY_ANIMKIT");
             for (WorldObject* target : targets)
             {
                 if (IsCreature(target))
@@ -2304,6 +2435,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_REMOVE_AURAS_BY_TYPE: // can be used to exit vehicle for example
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_REMOVE_AURAS_BY_TYPE");
             for (WorldObject* target : targets)
                 if (IsUnit(target))
                     target->ToUnit()->RemoveAurasByType((AuraType)e.action.auraType.type);
@@ -2312,6 +2444,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_SIGHT_DIST:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_SIGHT_DIST");
             for (WorldObject* target : targets)
                 if (IsCreature(target))
                     target->ToCreature()->m_SightDistance = e.action.sightDistance.dist;
@@ -2319,6 +2452,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_FLEE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_FLEE");
             for (WorldObject* target : targets)
                 if (IsCreature(target))
                     target->ToCreature()->GetMotionMaster()->MoveFleeing(me, e.action.flee.fleeTime);
@@ -2327,6 +2461,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_ADD_THREAT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_ADD_THREAT");
             if (!me->CanHaveThreatList())
                 break;
             for (WorldObject* target : targets)
@@ -2336,6 +2471,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_LOAD_EQUIPMENT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_LOAD_EQUIPMENT");
             for (WorldObject* target : targets)
                 if (IsCreature(target))
                     target->ToCreature()->LoadEquipment(e.action.loadEquipment.id, e.action.loadEquipment.force != 0);
@@ -2344,6 +2480,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_TRIGGER_RANDOM_TIMED_EVENT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_TRIGGER_RANDOM_TIMED_EVENT");
             uint32 eventId = urand(e.action.randomTimedEvent.minId, e.action.randomTimedEvent.maxId);
             ProcessEventsFor((SMART_EVENT)SMART_EVENT_TIMED_EVENT_TRIGGERED, nullptr, eventId);
             break;
@@ -2351,6 +2488,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
 
         case SMART_ACTION_REMOVE_ALL_GAMEOBJECTS:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_REMOVE_ALL_GAMEOBJECTS");
             for (WorldObject* target : targets)
                 if (IsUnit(target))
                     target->ToUnit()->RemoveAllGameObjects();
@@ -2359,6 +2497,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_PAUSE_MOVEMENT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_PAUSE_MOVEMENT");
             for (WorldObject* target : targets)
                 if (IsUnit(target))
                     target->ToUnit()->PauseMovement(e.action.pauseMovement.pauseTimer, e.action.pauseMovement.movementSlot, e.action.pauseMovement.force);
@@ -2366,6 +2505,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_RESPAWN_BY_SPAWNID:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_RESPAWN_BY_SPAWNID");
             Map* map = nullptr;
             if (WorldObject* obj = GetBaseObject())
                 map = obj->GetMap();
@@ -2380,6 +2520,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_PLAY_CINEMATIC:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_PLAY_CINEMATIC");
             for (WorldObject* target : targets)
             {
                 if (!IsPlayer(target))
@@ -2391,6 +2532,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SET_MOVEMENT_SPEED:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_MOVEMENT_SPEED");
             uint32 speedInteger = e.action.movementSpeed.speedInteger;
             uint32 speedFraction = e.action.movementSpeed.speedFraction;
             float speed = float(speedInteger) + float(speedFraction) / std::pow(10, std::floor(std::log10(float(speedFraction ? speedFraction : 1)) + 1));
@@ -2403,6 +2545,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_OVERRIDE_LIGHT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_OVERRIDE_LIGHT");
             if (WorldObject* obj = GetBaseObject())
             {
                 obj->GetMap()->SetZoneOverrideLight(e.action.overrideLight.zoneId, e.action.overrideLight.areaLightId, e.action.overrideLight.overrideLightId, e.action.overrideLight.transitionMilliseconds);
@@ -2413,6 +2556,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_OVERRIDE_WEATHER:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_OVERRIDE_WEATHER");
             if (WorldObject* obj = GetBaseObject())
             {
                 obj->GetMap()->SetZoneWeather(e.action.overrideWeather.zoneId, (WeatherState)e.action.overrideWeather.weatherId, float(e.action.overrideWeather.intensity));
@@ -2422,10 +2566,12 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
             break;
         }
         case SMART_ACTION_SET_AI_ANIM_KIT:
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_AI_ANIM_KIT");
             for (WorldObject* target : targets)
                 target->SetAIAnimKitId(e.action.setAIAnimKit.animKitId);
             break;
         case SMART_ACTION_SET_HOVER:
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SET_HOVER");
             for (WorldObject* target : targets)
                 if (IsUnit(target))
                     target->ToUnit()->SetHover(e.action.setHover.enable != 0);
@@ -2570,6 +2716,7 @@ SmartScriptHolder SmartScript::CreateSmartEvent(SMART_EVENT e, uint32 event_flag
 
 void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, Unit* invoker /*= nullptr*/)
 {
+    TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets event_type %u, action_type %u, target_type %u",e.GetEventType(),e.GetActionType(),e.GetTargetType());
     Unit* scriptTrigger = nullptr;
     if (invoker)
         scriptTrigger = invoker;
@@ -2580,15 +2727,18 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
     switch (e.GetTargetType())
     {
         case SMART_TARGET_SELF:
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_SELF");
             if (baseObject)
                 targets.push_back(baseObject);
             break;
         case SMART_TARGET_VICTIM:
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_VICTIM");
             if (me)
                 if (Unit* victim = me->GetVictim())
                     targets.push_back(victim);
             break;
         case SMART_TARGET_HOSTILE_SECOND_AGGRO:
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_HOSTILE_SECOND_AGGRO");
             if (me)
             {
                 if (e.target.hostilRandom.powerType)
@@ -2601,6 +2751,7 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
             }
             break;
         case SMART_TARGET_HOSTILE_LAST_AGGRO:
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_HOSTILE_LAST_AGGRO");
             if (me)
             {
                 if (e.target.hostilRandom.powerType)
@@ -2613,6 +2764,7 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
             }
             break;
         case SMART_TARGET_HOSTILE_RANDOM:
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_HOSTILE_RANDOM");
             if (me)
             {
                 if (e.target.hostilRandom.powerType)
@@ -2625,6 +2777,7 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
             }
             break;
         case SMART_TARGET_HOSTILE_RANDOM_NOT_TOP:
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_HOSTILE_RANDOM_NOT_TOP");
             if (me)
             {
                 if (e.target.hostilRandom.powerType)
@@ -2637,6 +2790,7 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
             }
             break;
         case SMART_TARGET_FARTHEST:
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_FARTHEST");
             if (me)
             {
                 if (Unit* u = me->AI()->SelectTarget(SELECT_TARGET_MAXDISTANCE, 0, FarthestTargetSelector(me, (float)e.target.farthest.maxDist, e.target.farthest.playerOnly != 0, e.target.farthest.isInLos != 0)))
@@ -2644,15 +2798,18 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
             }
             break;
         case SMART_TARGET_ACTION_INVOKER:
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_ACTION_INVOKER");
             if (scriptTrigger)
                 targets.push_back(scriptTrigger);
             break;
         case SMART_TARGET_ACTION_INVOKER_VEHICLE:
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_ACTION_INVOKER_VEHICLE");
             if (scriptTrigger && scriptTrigger->GetVehicle() && scriptTrigger->GetVehicle()->GetBase())
                 targets.push_back(scriptTrigger->GetVehicle()->GetBase());
             break;
         case SMART_TARGET_INVOKER_PARTY:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_INVOKER_PARTY");
             if (scriptTrigger)
             {
                 if (Player* player = scriptTrigger->ToPlayer())
@@ -2675,6 +2832,7 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
         }
         case SMART_TARGET_CREATURE_RANGE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_CREATURE_RANGE");
             ObjectVector units;
             GetWorldObjectsInDist(units, static_cast<float>(e.target.unitRange.maxDist));
 
@@ -2693,6 +2851,7 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
         }
         case SMART_TARGET_CREATURE_DISTANCE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_CREATURE_DISTANCE");
             ObjectVector units;
             GetWorldObjectsInDist(units, static_cast<float>(e.target.unitDistance.dist));
 
@@ -2711,6 +2870,7 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
         }
         case SMART_TARGET_GAMEOBJECT_DISTANCE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_GAMEOBJECT_DISTANCE");
             ObjectVector units;
             GetWorldObjectsInDist(units, static_cast<float>(e.target.goDistance.dist));
 
@@ -2729,6 +2889,7 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
         }
         case SMART_TARGET_GAMEOBJECT_RANGE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_GAMEOBJECT_RANGE");
             ObjectVector units;
             GetWorldObjectsInDist(units, static_cast<float>(e.target.goRange.maxDist));
 
@@ -2747,6 +2908,7 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
         }
         case SMART_TARGET_CREATURE_GUID:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_CREATURE_GUID");
             if (!scriptTrigger && !baseObject)
             {
                 TC_LOG_ERROR("sql.sql", "SMART_TARGET_CREATURE_GUID can not be used without invoker");
@@ -2760,6 +2922,7 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
         }
         case SMART_TARGET_GAMEOBJECT_GUID:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_GAMEOBJECT_GUID");
             if (!scriptTrigger && !baseObject)
             {
                 TC_LOG_ERROR("sql.sql", "SMART_TARGET_GAMEOBJECT_GUID can not be used without invoker");
@@ -2773,6 +2936,7 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
         }
         case SMART_TARGET_PLAYER_RANGE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_PLAYER_RANGE");
             ObjectVector units;
             GetWorldObjectsInDist(units, static_cast<float>(e.target.playerRange.maxDist));
 
@@ -2784,6 +2948,7 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
         }
         case SMART_TARGET_PLAYER_DISTANCE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_PLAYER_DISTANCE");
             ObjectVector units;
             GetWorldObjectsInDist(units, static_cast<float>(e.target.playerDistance.dist));
 
@@ -2794,6 +2959,7 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
         }
         case SMART_TARGET_STORED:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_STORED");
             WorldObject* ref = GetBaseObject();
             if (!ref)
                 ref = scriptTrigger;
@@ -2805,18 +2971,21 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
         }
         case SMART_TARGET_CLOSEST_CREATURE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_CLOSEST_CREATURE");
             if (Creature* target = baseObject->FindNearestCreature(e.target.closest.entry, float(e.target.closest.dist ? e.target.closest.dist : 100), !e.target.closest.dead))
                 targets.push_back(target);
             break;
         }
         case SMART_TARGET_CLOSEST_GAMEOBJECT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_CLOSEST_GAMEOBJECT");
             if (GameObject* target = baseObject->FindNearestGameObject(e.target.closest.entry, float(e.target.closest.dist ? e.target.closest.dist : 100)))
                 targets.push_back(target);
             break;
         }
         case SMART_TARGET_CLOSEST_PLAYER:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_CLOSEST_PLAYER");
             if (WorldObject* obj = GetBaseObject())
                 if (Player* target = obj->SelectNearestPlayer(float(e.target.playerDistance.dist)))
                     targets.push_back(target);
@@ -2824,6 +2993,7 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
         }
         case SMART_TARGET_OWNER_OR_SUMMONER:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_OWNER_OR_SUMMONER");
             if (me)
             {
                 ObjectGuid charmerOrOwnerGuid = me->GetCharmerOrOwnerGUID();
@@ -2857,6 +3027,7 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
         }
         case SMART_TARGET_THREAT_LIST:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_THREAT_LIST");
             if (me && me->CanHaveThreatList())
                 for (auto* ref : me->GetThreatManager().GetUnsortedThreatList())
                     if (!e.target.hostilRandom.maxDist || me->IsWithinCombatRange(ref->GetVictim(), float(e.target.hostilRandom.maxDist)))
@@ -2865,6 +3036,7 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
         }
         case SMART_TARGET_CLOSEST_ENEMY:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_CLOSEST_ENEMY");
             if (me)
                 if (Unit* target = me->SelectNearestTarget(e.target.closestAttackable.maxDist, e.target.closestAttackable.playerOnly != 0))
                     targets.push_back(target);
@@ -2872,6 +3044,7 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
         }
         case SMART_TARGET_CLOSEST_FRIENDLY:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_CLOSEST_FRIENDLY");
             if (me)
                 if (Unit* target = DoFindClosestFriendlyInRange(e.target.closestFriendly.maxDist, e.target.closestFriendly.playerOnly != 0))
                     targets.push_back(target);
@@ -2879,6 +3052,7 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
         }
         case SMART_TARGET_LOOT_RECIPIENTS:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_LOOT_RECIPIENTS");
             if (me)
             {
                 if (Group* lootGroup = me->GetLootRecipientGroup())
@@ -2898,6 +3072,7 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
         }
         case SMART_TARGET_VEHICLE_PASSENGER:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:GetTargets SMART_TARGET_VEHICLE_PASSENGER");
             if (me && me->IsVehicle())
                 for (auto seatItr = me->GetVehicleKit()->Seats.begin(); seatItr != me->GetVehicleKit()->Seats.end(); ++seatItr)
                     if (!e.target.vehicle.seatMask || (e.target.vehicle.seatMask & (1 << seatItr->first)))
@@ -2925,6 +3100,7 @@ void SmartScript::GetWorldObjectsInDist(ObjectVector& targets, float dist)
 
 void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, uint32 var1, bool bvar, SpellInfo const* spell, GameObject* gob)
 {
+    TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent event_type %u, action_type %u, target_type %u",e.GetEventType(),e.GetActionType(),e.GetTargetType());
     if (!e.active && e.GetEventType() != SMART_EVENT_LINK)
         return;
 
@@ -2937,24 +3113,29 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
     switch (e.GetEventType())
     {
         case SMART_EVENT_LINK://special handling
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_LINK");
             ProcessAction(e, unit, var0, var1, bvar, spell, gob);
             break;
         //called from Update tick
         case SMART_EVENT_UPDATE:
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_UPDATE");
             ProcessTimedAction(e, e.event.minMaxRepeat.repeatMin, e.event.minMaxRepeat.repeatMax);
             break;
         case SMART_EVENT_UPDATE_OOC:
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_UPDATE_OOC");
             if (me && me->IsEngaged())
                 return;
             ProcessTimedAction(e, e.event.minMaxRepeat.repeatMin, e.event.minMaxRepeat.repeatMax);
             break;
         case SMART_EVENT_UPDATE_IC:
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_UPDATE_IC");
             if (!me || !me->IsEngaged())
                 return;
             ProcessTimedAction(e, e.event.minMaxRepeat.repeatMin, e.event.minMaxRepeat.repeatMax);
             break;
         case SMART_EVENT_HEALT_PCT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_HEALT_PCT");
             if (!me || !me->IsEngaged() || !me->GetMaxHealth())
                 return;
             uint32 perc = (uint32)me->GetHealthPct();
@@ -2965,6 +3146,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_TARGET_HEALTH_PCT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_TARGET_HEALTH_PCT");
             if (!me || !me->IsEngaged() || !me->GetVictim() || !me->EnsureVictim()->GetMaxHealth())
                 return;
             uint32 perc = (uint32)me->EnsureVictim()->GetHealthPct();
@@ -2975,6 +3157,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_MANA_PCT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_MANA_PCT");
             if (!me || !me->IsEngaged() || !me->GetMaxPower(POWER_MANA))
                 return;
             uint32 perc = uint32(100.0f * me->GetPower(POWER_MANA) / me->GetMaxPower(POWER_MANA));
@@ -2985,6 +3168,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_TARGET_MANA_PCT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_TARGET_MANA_PCT");
             if (!me || !me->IsEngaged() || !me->GetVictim() || !me->EnsureVictim()->GetMaxPower(POWER_MANA))
                 return;
             uint32 perc = uint32(100.0f * me->EnsureVictim()->GetPower(POWER_MANA) / me->EnsureVictim()->GetMaxPower(POWER_MANA));
@@ -2995,6 +3179,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_RANGE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_RANGE");
             if (!me || !me->IsEngaged() || !me->GetVictim())
                 return;
 
@@ -3006,6 +3191,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_VICTIM_CASTING:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_VICTIM_CASTING");
             if (!me || !me->IsEngaged())
                 return;
 
@@ -3024,6 +3210,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_FRIENDLY_HEALTH:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_FRIENDLY_HEALTH");
             if (!me || !me->IsEngaged())
                 return;
 
@@ -3040,6 +3227,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_FRIENDLY_IS_CC:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_FRIENDLY_IS_CC");
             if (!me || !me->IsEngaged())
                 return;
 
@@ -3056,6 +3244,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_FRIENDLY_MISSING_BUFF:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_FRIENDLY_MISSING_BUFF");
             std::list<Creature*> pList;
             DoFindFriendlyMissingBuff(pList, (float)e.event.missingBuff.radius, e.event.missingBuff.spell);
 
@@ -3067,6 +3256,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_HAS_AURA:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_HAS_AURA");
             if (!me)
                 return;
             uint32 count = me->GetAuraCount(e.event.aura.spell);
@@ -3076,6 +3266,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_TARGET_BUFFED:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_TARGET_BUFFED");
             if (!me || !me->GetVictim())
                 return;
             uint32 count = me->EnsureVictim()->GetAuraCount(e.event.aura.spell);
@@ -3086,6 +3277,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_CHARMED:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_CHARMED");
             if (bvar == (e.event.charm.onRemove != 1))
                 ProcessAction(e, unit, var0, var1, bvar, spell, gob);
             break;
@@ -3110,15 +3302,18 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         case SMART_EVENT_JUST_CREATED:
         case SMART_EVENT_FOLLOW_COMPLETED:
         case SMART_EVENT_ON_SPELLCLICK:
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_AGGRO,SMART_EVENT_DEATH,SMART_EVENT_EVADE,SMART_EVENT_REACHED_HOME,SMART_EVENT_CHARMED_TARGET,SMART_EVENT_CORPSE_REMOVED,SMART_EVENT_AI_INIT,SMART_EVENT_TRANSPORT_ADDPLAYER,SMART_EVENT_TRANSPORT_REMOVE_PLAYER,SMART_EVENT_QUEST_ACCEPTED,SMART_EVENT_QUEST_OBJ_COPLETETION,SMART_EVENT_QUEST_COMPLETION,SMART_EVENT_QUEST_REWARDED,SMART_EVENT_QUEST_FAIL,SMART_EVENT_JUST_SUMMONED,SMART_EVENT_RESET,SMART_EVENT_JUST_CREATED,SMART_EVENT_FOLLOW_COMPLETED,SMART_EVENT_ON_SPELLCLICK");
             ProcessAction(e, unit, var0, var1, bvar, spell, gob);
             break;
         case SMART_EVENT_GOSSIP_HELLO:
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_GOSSIP_HELLO");
             if (e.event.gossipHello.noReportUse && var0)
                 return;
             ProcessAction(e, unit, var0, var1, bvar, spell, gob);
             break;
         case SMART_EVENT_IS_BEHIND_TARGET:
             {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_IS_BEHIND_TARGET");
                 if (!me)
                     return;
 
@@ -3132,12 +3327,14 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         case SMART_EVENT_RECEIVE_EMOTE:
             if (e.event.emote.emote == var0)
             {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_RECEIVE_EMOTE");
                 RecalcTimer(e, e.event.emote.cooldownMin, e.event.emote.cooldownMax);
                 ProcessAction(e, unit);
             }
             break;
         case SMART_EVENT_KILL:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_KILL");
             if (!me || !unit)
                 return;
             if (e.event.kill.playerOnly && unit->GetTypeId() != TYPEID_PLAYER)
@@ -3151,6 +3348,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         case SMART_EVENT_SPELLHIT_TARGET:
         case SMART_EVENT_SPELLHIT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_SPELLHIT_TARGET,SMART_EVENT_SPELLHIT");
             if (!spell)
                 return;
             if ((!e.event.spellHit.spell || spell->Id == e.event.spellHit.spell) &&
@@ -3163,6 +3361,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_OOC_LOS:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_OOC_LOS");
             if (!me || me->IsEngaged())
                 return;
             //can trigger if closer than fMaxAllowedRange
@@ -3185,6 +3384,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_IC_LOS:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_IC_LOS");
             if (!me || !me->IsEngaged())
                 return;
             //can trigger if closer than fMaxAllowedRange
@@ -3207,6 +3407,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_RESPAWN:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_RESPAWN");
             if (!GetBaseObject())
                 return;
             if (e.event.respawn.type == SMART_SCRIPT_RESPAWN_CONDITION_MAP && GetBaseObject()->GetMapId() != e.event.respawn.map)
@@ -3218,6 +3419,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_SUMMONED_UNIT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_SUMMONED_UNIT");
             if (!IsCreature(unit))
                 return;
             if (e.event.summoned.creature && unit->GetEntry() != e.event.summoned.creature)
@@ -3230,6 +3432,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         case SMART_EVENT_DAMAGED:
         case SMART_EVENT_DAMAGED_TARGET:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_RECEIVE_HEAL,SMART_EVENT_DAMAGED,SMART_EVENT_DAMAGED_TARGET");
             if (var0 > e.event.minMaxRepeat.max || var0 < e.event.minMaxRepeat.min)
                 return;
             RecalcTimer(e, e.event.minMaxRepeat.repeatMin, e.event.minMaxRepeat.repeatMax);
@@ -3238,6 +3441,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_MOVEMENTINFORM:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_MOVEMENTINFORM");
             if ((e.event.movementInform.type && var0 != e.event.movementInform.type) || (e.event.movementInform.id && var1 != e.event.movementInform.id))
                 return;
             ProcessAction(e, unit, var0, var1);
@@ -3246,6 +3450,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         case SMART_EVENT_TRANSPORT_RELOCATE:
         case SMART_EVENT_WAYPOINT_START:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_TRANSPORT_RELOCATE,SMART_EVENT_WAYPOINT_START");
             if (e.event.waypoint.pathID && var0 != e.event.waypoint.pathID)
                 return;
             ProcessAction(e, unit, var0);
@@ -3257,6 +3462,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         case SMART_EVENT_WAYPOINT_STOPPED:
         case SMART_EVENT_WAYPOINT_ENDED:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_WAYPOINT_REACHED,SMART_EVENT_WAYPOINT_RESUMED,SMART_EVENT_WAYPOINT_PAUSED,SMART_EVENT_WAYPOINT_STOPPED,SMART_EVENT_WAYPOINT_ENDED");
             if (!me || (e.event.waypoint.pointID && var0 != e.event.waypoint.pointID) || (e.event.waypoint.pathID && var1 != e.event.waypoint.pathID))
                 return;
             ProcessAction(e, unit);
@@ -3264,6 +3470,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_SUMMON_DESPAWNED:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_SUMMON_DESPAWNED");
             if (e.event.summoned.creature && e.event.summoned.creature != var0)
                 return;
             RecalcTimer(e, e.event.summoned.cooldownMin, e.event.summoned.cooldownMax);
@@ -3272,6 +3479,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_INSTANCE_PLAYER_ENTER:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_INSTANCE_PLAYER_ENTER");
             if (e.event.instancePlayerEnter.team && var0 != e.event.instancePlayerEnter.team)
                 return;
             RecalcTimer(e, e.event.instancePlayerEnter.cooldownMin, e.event.instancePlayerEnter.cooldownMax);
@@ -3281,6 +3489,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         case SMART_EVENT_ACCEPTED_QUEST:
         case SMART_EVENT_REWARD_QUEST:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_ACCEPTED_QUEST,SMART_EVENT_REWARD_QUEST");
             if (e.event.quest.quest && var0 != e.event.quest.quest)
                 return;
             RecalcTimer(e, e.event.quest.cooldownMin, e.event.quest.cooldownMax);
@@ -3289,6 +3498,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_TRANSPORT_ADDCREATURE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_TRANSPORT_ADDCREATURE");
             if (e.event.transportAddCreature.creature && var0 != e.event.transportAddCreature.creature)
                 return;
             ProcessAction(e, unit, var0);
@@ -3296,6 +3506,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_AREATRIGGER_ONTRIGGER:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_AREATRIGGER_ONTRIGGER");
             if (e.event.areatrigger.id && var0 != e.event.areatrigger.id)
                 return;
             ProcessAction(e, unit, var0);
@@ -3303,6 +3514,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_TEXT_OVER:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_TEXT_OVER");
             if (var0 != e.event.textOver.textGroupID || (e.event.textOver.creatureEntry && e.event.textOver.creatureEntry != var1))
                 return;
             ProcessAction(e, unit, var0);
@@ -3310,6 +3522,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_DATA_SET:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_DATA_SET");
             if (e.event.dataSet.id != var0 || e.event.dataSet.value != var1)
                 return;
             RecalcTimer(e, e.event.dataSet.cooldownMin, e.event.dataSet.cooldownMax);
@@ -3319,21 +3532,27 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         case SMART_EVENT_PASSENGER_REMOVED:
         case SMART_EVENT_PASSENGER_BOARDED:
         {
-            if (!unit)
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_PASSENGER_REMOVED,SMART_EVENT_PASSENGER_BOARDED: enter case %u",0);
+            if (!unit) {
+                TC_LOG_DEBUG("scripts.ai", "SmartScript: Passenger Boarded/Removed no unit %u",0);
                 return;
+            }
+            TC_LOG_DEBUG("scripts.ai", "SmartScript: Passenger Boarded/Removed unit exists %u",0);
             RecalcTimer(e, e.event.minMax.repeatMin, e.event.minMax.repeatMax);
+            TC_LOG_DEBUG("scripts.ai", "SmartScript: Passenger Boarded/Removed passed recalc timer %u",0);
             ProcessAction(e, unit);
             break;
         }
         case SMART_EVENT_TIMED_EVENT_TRIGGERED:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_TIMED_EVENT_TRIGGERED");
             if (e.event.timedEvent.id == var0)
                 ProcessAction(e, unit);
             break;
         }
         case SMART_EVENT_GOSSIP_SELECT:
         {
-            TC_LOG_DEBUG("scripts.ai", "SmartScript: Gossip Select:  menu %u action %u", var0, var1);//little help for scripters
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_GOSSIP_SELECT:  menu %u action %u", var0, var1);//little help for scripters
             if (e.event.gossip.sender != var0 || e.event.gossip.action != var1)
                 return;
             ProcessAction(e, unit, var0, var1);
@@ -3341,6 +3560,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_EVENT_PHASE_CHANGE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_EVENT_PHASE_CHANGE");
             if (!IsInPhase(e.event.eventPhaseChange.phasemask))
                 return;
 
@@ -3350,6 +3570,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         case SMART_EVENT_GAME_EVENT_START:
         case SMART_EVENT_GAME_EVENT_END:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_GAME_EVENT_START,SMART_EVENT_GAME_EVENT_END");
             if (e.event.gameEvent.gameEventId != var0)
                 return;
             ProcessAction(e, nullptr, var0);
@@ -3357,6 +3578,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_GO_LOOT_STATE_CHANGED:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_GO_LOOT_STATE_CHANGED");
             if (e.event.goLootStateChanged.lootState != var0)
                 return;
             ProcessAction(e, unit, var0, var1);
@@ -3364,6 +3586,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_GO_EVENT_INFORM:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_GO_EVENT_INFORM");
             if (e.event.eventInform.eventId != var0)
                 return;
             ProcessAction(e, nullptr, var0);
@@ -3371,6 +3594,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_ACTION_DONE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_ACTION_DONE");
             if (e.event.doAction.eventId != var0)
                 return;
             ProcessAction(e, unit, var0);
@@ -3378,6 +3602,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_FRIENDLY_HEALTH_PCT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_FRIENDLY_HEALTH_PCT");
             if (!me || !me->IsEngaged())
                 return;
 
@@ -3419,6 +3644,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_DISTANCE_CREATURE:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_DISTANCE_CREATURE");
             if (!me)
                 return;
 
@@ -3449,6 +3675,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
         }
         case SMART_EVENT_DISTANCE_GAMEOBJECT:
         {
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_DISTANCE_GAMEOBJECT");
             if (!me)
                 return;
 
@@ -3478,6 +3705,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
             break;
         }
         case SMART_EVENT_COUNTER_SET:
+            TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent SMART_EVENT_COUNTER_SET");
             if (e.event.counter.id != var0 || GetCounterValue(e.event.counter.id) != e.event.counter.value)
                 return;
 
