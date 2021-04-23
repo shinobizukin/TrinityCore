@@ -66,6 +66,7 @@ void Pet::AddToWorld()
     ///- Register the pet for guid lookup
     if (!IsInWorld())
     {
+        TC_LOG_DEBUG("scripts", "Adding pet %u with entry %u to world in map %u", GetGUID().GetCounter(), GetEntry(), GetMap()->GetId());
         ///- Register the pet for guid lookup
         GetMap()->GetObjectsStore().Insert<Pet>(GetGUID(), this);
         Unit::AddToWorld();

@@ -44,6 +44,7 @@ void AreaTrigger::AddToWorld()
     if (!IsInWorld())
     {
         GetMap()->GetObjectsStore().Insert<AreaTrigger>(GetGUID(), this);
+        TC_LOG_DEBUG("scripts", "Adding creature %u with entry %u to world in map %u", GetGUID().GetCounter(), GetEntry(), GetMap()->GetId());
         WorldObject::AddToWorld();
     }
 }

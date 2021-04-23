@@ -213,6 +213,7 @@ void GameObject::AddToWorld()
     ///- Register the gameobject for guid lookup
     if (!IsInWorld())
     {
+        TC_LOG_DEBUG("scripts", "Adding gameobject %u with entry %u to world in map %u", GetGUID().GetCounter(), GetEntry(), GetMap()->GetId());
         if (m_zoneScript)
             m_zoneScript->OnGameObjectCreate(this);
 

@@ -813,7 +813,7 @@ void Spell::SelectSpellTargets()
 
         if (m_targets.HasDst()) {
             AddDestTarget(*m_targets.GetDst(), i);
-            TC_LOG_TRACE("spells","target has dst");
+            TC_LOG_DEBUG("spells","target has dst");
         }
 
         if (m_spellInfo->IsChanneled())
@@ -865,22 +865,22 @@ void Spell::SelectSpellTargets()
     {
         if (m_targets.HasTraj())
         {
-            TC_LOG_TRACE("spells","targets has traj");
+            TC_LOG_DEBUG("spells","targets has traj");
             float speed = m_targets.GetSpeedXY();
             if (speed > 0.0f)
                 m_delayMoment = uint64(std::floor(m_targets.GetDist2d() / speed * 1000.0f));
         }
         else if (m_spellInfo->Speed > 0.0f)
         {
-            TC_LOG_TRACE("spells","else, targets do not have traj");
+            TC_LOG_DEBUG("spells","else, targets do not have traj");
             float dist = m_caster->GetExactDist(*m_targets.GetDstPos());
             if (!m_spellInfo->HasAttribute(SPELL_ATTR9_SPECIAL_DELAY_CALCULATION)) {
                 m_delayMoment = uint64(std::floor(dist / m_spellInfo->Speed * 1000.0f));
-                TC_LOG_TRACE("spells","doing some weird delay calc");
+                TC_LOG_DEBUG("spells","doing some weird delay calc");
             }
             else {
                 m_delayMoment = uint64(m_spellInfo->Speed * 1000.0f);
-                TC_LOG_TRACE("spells","delayMoment %f", m_delayMoment);
+                TC_LOG_DEBUG("spells","delayMoment %f", m_delayMoment);
             }
         }
     }
@@ -3142,27 +3142,27 @@ bool Spell::UpdateChanneledTargetList()
 
 void Spell::prepare(SpellCastTargets const& targets, AuraEffect const* triggeredByAura)
 {
-    TC_LOG_TRACE("spells","Spell::prepare");
+    TC_LOG_DEBUG("spells","Spell::prepare");
     if (m_CastItem)
     {
-        TC_LOG_TRACE("spells","is m_CastItem");
+        TC_LOG_DEBUG("spells","is m_CastItem");
         m_castItemGUID = m_CastItem->GetGUID();
         m_castItemEntry = m_CastItem->GetEntry();
     }
     else
     {
-        TC_LOG_TRACE("spells","is not m_CastItem");
+        TC_LOG_DEBUG("spells","is not m_CastItem");
         m_castItemGUID.Clear();
         m_castItemEntry = 0;
     }
 
     InitExplicitTargets(targets);
-    TC_LOG_TRACE("spells","ExplicitTarget initiated");
+    TC_LOG_DEBUG("spells","ExplicitTarget initiated");
 
     // Fill aura scaling information
     if (m_caster->IsControlledByPlayer() && !m_spellInfo->IsPassive() && m_spellInfo->SpellLevel && !m_spellInfo->IsChanneled() && !(_triggeredCastFlags & TRIGGERED_IGNORE_AURA_SCALING))
     {
-        TC_LOG_TRACE("spells","is controlled by player, is not passive, has a spell level is not channeled, triggered flags nonsense");
+        TC_LOG_DEBUG("spells","is controlled by player, is not passive, has a spell level is not channeled, triggered flags nonsense");
         for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         {
             if (m_spellInfo->Effects[i].Effect == SPELL_EFFECT_APPLY_AURA || m_spellInfo->Effects[i].Effect == SPELL_EFFECT_APPLY_AURA_2)
@@ -3185,18 +3185,18 @@ void Spell::prepare(SpellCastTargets const& targets, AuraEffect const* triggered
 
     if (triggeredByAura) {
         m_triggeredByAuraSpell  = triggeredByAura->GetSpellInfo();
-        TC_LOG_TRACE("spells","is triggered by aura");
+        TC_LOG_DEBUG("spells","is triggered by aura");
     }
 
     // create and add update event for this spell
     SpellEvent* Event = new SpellEvent(this);
     m_caster->m_Events.AddEvent(Event, m_caster->m_Events.CalculateTime(1));
-    TC_LOG_TRACE("spells","add spell event");
+    TC_LOG_DEBUG("spells","add spell event");
 
     //Prevent casting at cast another spell (ServerSide check)
     if (!(_triggeredCastFlags & TRIGGERED_IGNORE_CAST_IN_PROGRESS) && m_caster->IsNonMeleeSpellCast(false, true, true, m_spellInfo->Id == 75) && m_cast_count)
     {
-        TC_LOG_TRACE("spells","triggeredFlag nonsense, isNonMeleeSpellCast, m_cast_count");
+        TC_LOG_DEBUG("spells","triggeredFlag nonsense, isNonMeleeSpellCast, m_cast_count");
         SendCastResult(SPELL_FAILED_SPELL_IN_PROGRESS);
         finish(false);
         return;
@@ -3205,7 +3205,7 @@ void Spell::prepare(SpellCastTargets const& targets, AuraEffect const* triggered
     // Don't allow to interrupt channeled spells that are not allowed to be cancelled
     if (Spell* curSpell = m_caster->GetCurrentSpell(CURRENT_CHANNELED_SPELL))
     {
-        TC_LOG_TRACE("spells","checking for channeled spell");
+        TC_LOG_DEBUG("spells","checking for channeled spell");
         if (curSpell->m_spellInfo->HasAttribute(SPELL_ATTR0_CANT_CANCEL) && !m_spellInfo->HasAttribute(SPELL_ATTR4_CAN_CAST_WHILE_CASTING))
         {
             SendCastResult(SPELL_FAILED_CANT_DO_THAT_RIGHT_NOW);
@@ -3216,17 +3216,17 @@ void Spell::prepare(SpellCastTargets const& targets, AuraEffect const* triggered
 
     if (DisableMgr::IsDisabledFor(DISABLE_TYPE_SPELL, m_spellInfo->Id, m_caster))
     {
-        TC_LOG_TRACE("spells","spell is disabled");
+        TC_LOG_DEBUG("spells","spell is disabled");
         SendCastResult(SPELL_FAILED_SPELL_UNAVAILABLE);
         finish(false);
         return;
     }
     LoadScripts();
-    TC_LOG_TRACE("spells","scripts loaded");
+    TC_LOG_DEBUG("spells","scripts loaded");
 
     // Fill cost data (do not use power for item casts)
     m_powerCost = m_CastItem ? 0 : m_spellInfo->CalcPowerCost(m_caster, m_spellSchoolMask, this);
-    TC_LOG_TRACE("spells","calc power cost");
+    TC_LOG_DEBUG("spells","calc power cost");
 
     // Set combo point requirement
     if ((_triggeredCastFlags & TRIGGERED_IGNORE_COMBO_POINTS) || m_CastItem || !m_caster->m_playerMovingMe)
@@ -3235,14 +3235,14 @@ void Spell::prepare(SpellCastTargets const& targets, AuraEffect const* triggered
     MountResult mountResult = MountResult::Ok;
     uint32 param1 = 0, param2 = 0;
     SpellCastResult result = CheckCast(true, &param1, &param2, &mountResult);
-    TC_LOG_TRACE("spells","recieved SpellCastResult");
+    TC_LOG_DEBUG("spells","recieved SpellCastResult");
     // target is checked in too many locations and with different results to handle each of them
     // handle just the general SPELL_FAILED_BAD_TARGETS result which is the default result for most DBC target checks
     if (_triggeredCastFlags & TRIGGERED_IGNORE_TARGET_CHECK && result == SPELL_FAILED_BAD_TARGETS)
         result = SPELL_CAST_OK;
     if (result != SPELL_CAST_OK && !IsAutoRepeat())          //always cast autorepeat dummy for triggering
     {
-        TC_LOG_TRACE("spells","spell cast is not okay, autorepeat is off");
+        TC_LOG_DEBUG("spells","spell cast is not okay, autorepeat is off");
         // Periodic auras should be interrupted when aura triggers a spell which can't be cast
         // for example bladestorm aura should be removed on disarm as of patch 3.3.5
         // channeled periodic spells should be affected by this (arcane missiles, penance, etc)
@@ -3268,11 +3268,11 @@ void Spell::prepare(SpellCastTargets const& targets, AuraEffect const* triggered
 
     // Prepare data for triggers
     prepareDataForTriggerSystem();
-    TC_LOG_TRACE("spells","data prepared for trigger system");
+    TC_LOG_DEBUG("spells","data prepared for trigger system");
 
     if (Player* player = m_caster->ToPlayer())
     {
-        TC_LOG_TRACE("spells","caster is player");
+        TC_LOG_DEBUG("spells","caster is player");
         if (!player->GetCommandStatus(CHEAT_CASTTIME))
         {
             // calculate cast time (calculated after first CheckCast check to prevent charge counting for first CheckCast fail)
@@ -3293,7 +3293,7 @@ void Spell::prepare(SpellCastTargets const& targets, AuraEffect const* triggered
     if ((m_spellInfo->IsChanneled() || m_casttime) && m_caster->GetTypeId() == TYPEID_PLAYER && (!m_caster->IsCharmed() || !m_caster->GetCharmerGUID().IsCreature()) && m_caster->isMoving() && m_spellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_MOVEMENT)
 
     {
-        TC_LOG_TRACE("spells","checking for channeled or casttime spells");
+        TC_LOG_DEBUG("spells","checking for channeled or casttime spells");
         // 1. Has casttime, 2. Or doesn't have flag to allow movement during channel
         if (m_casttime || !m_spellInfo->IsMoveAllowedChannel())
         {
@@ -3306,7 +3306,7 @@ void Spell::prepare(SpellCastTargets const& targets, AuraEffect const* triggered
     // Creatures focus their target when possible
     if (m_casttime && m_caster->IsCreature() && !m_spellInfo->IsNextMeleeSwingSpell() && !IsAutoRepeat() && !m_caster->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_POSSESSED))
     {
-        TC_LOG_TRACE("spells","creature is trying to focus target");
+        TC_LOG_DEBUG("spells","creature is trying to focus target");
         // Channeled spells and some triggered spells do not focus a cast target. They face their target later on via channel object guid and via spell attribute or not at all
         bool const focusTarget = !m_spellInfo->IsChanneled() && !(_triggeredCastFlags & TRIGGERED_IGNORE_SET_FACING);
         if (focusTarget && m_targets.GetObjectTarget() && m_caster != m_targets.GetObjectTarget())
@@ -3319,17 +3319,17 @@ void Spell::prepare(SpellCastTargets const& targets, AuraEffect const* triggered
     ReSetTimer();
 
     TC_LOG_DEBUG("spells", "Spell::prepare: spell id %u source %u caster %d customCastFlags %u mask %u", m_spellInfo->Id, m_caster->GetEntry(), m_originalCaster ? m_originalCaster->GetEntry() : -1, _triggeredCastFlags, m_targets.GetTargetMask());
-    TC_LOG_TRACE("spells","Spell::prepare: spell id %u source %u caster %d customCastFlags %u mask %u", m_spellInfo->Id, m_caster->GetEntry(), m_originalCaster ? m_originalCaster->GetEntry() : -1, _triggeredCastFlags, m_targets.GetTargetMask());
+    TC_LOG_DEBUG("spells","Spell::prepare: spell id %u source %u caster %d customCastFlags %u mask %u", m_spellInfo->Id, m_caster->GetEntry(), m_originalCaster ? m_originalCaster->GetEntry() : -1, _triggeredCastFlags, m_targets.GetTargetMask());
     //Containers for channeled spells have to be set
     /// @todoApply this to all cast spells if needed
     // Why check duration? 29350: channelled triggers channelled
     if ((_triggeredCastFlags & TRIGGERED_CAST_DIRECTLY) && (!m_spellInfo->IsChanneled() || !m_spellInfo->GetMaxDuration())) {
         cast(true);
-        TC_LOG_TRACE("spells","spell set to cast");
+        TC_LOG_DEBUG("spells","spell set to cast");
     }
     else
     {
-        TC_LOG_TRACE("spells","failed checks for triggers and channeling/casting");
+        TC_LOG_DEBUG("spells","failed checks for triggers and channeling/casting");
         // stealth must be removed at cast starting (at show channel bar)
         // skip triggered spell (item equip spell casting and other not explicit character casts/item uses)
         if (!(_triggeredCastFlags & TRIGGERED_IGNORE_AURA_INTERRUPT_FLAGS) && m_spellInfo->IsBreakingStealth())
@@ -3344,7 +3344,7 @@ void Spell::prepare(SpellCastTargets const& targets, AuraEffect const* triggered
         }
 
         m_caster->SetCurrentCastSpell(this);
-        TC_LOG_TRACE("spells","sending spell start");
+        TC_LOG_DEBUG("spells","sending spell start");
         SendSpellStart();
 
         if (!(_triggeredCastFlags & TRIGGERED_IGNORE_GCD))
@@ -3358,9 +3358,9 @@ void Spell::prepare(SpellCastTargets const& targets, AuraEffect const* triggered
         // because target could be relocated in the meantime, making the spell fly to the air (no targets can be registered, so no effects processed, nothing in combat log)
         if (!m_casttime && /*!m_spellInfo->StartRecoveryTime && */ GetCurrentContainer() == CURRENT_GENERIC_SPELL) {
             cast(true);
-            TC_LOG_TRACE("spells","spell set to cast");
+            TC_LOG_DEBUG("spells","spell set to cast");
         } else {
-            TC_LOG_TRACE("spells","spell not set to cast");
+            TC_LOG_DEBUG("spells","spell not set to cast");
         }
     }
 }
@@ -3439,12 +3439,12 @@ void Spell::cancel(Spell* interruptingSpell /* = nullptr */)
 
 void Spell::cast(bool skipCheck)
 {
-    TC_LOG_TRACE("spells","Spell::cast");
+    TC_LOG_DEBUG("spells","Spell::cast");
     Player* modOwner = m_caster->GetSpellModOwner();
     Spell* lastSpellMod = nullptr;
     if (modOwner)
     {
-        TC_LOG_TRACE("spells","modOwner exists");
+        TC_LOG_DEBUG("spells","modOwner exists");
         lastSpellMod = modOwner->m_spellModTakingSpell;
         if (lastSpellMod)
             modOwner->SetSpellModTakingSpell(lastSpellMod, false);
@@ -3458,13 +3458,13 @@ void Spell::cast(bool skipCheck)
 
 void Spell::_cast(bool skipCheck)
 {
-    TC_LOG_TRACE("spells","Spell::_cast");
+    TC_LOG_DEBUG("spells","Spell::_cast");
     if (skipCheck)
-        TC_LOG_TRACE("spells","skipCheck is true");
+        TC_LOG_DEBUG("spells","skipCheck is true");
     // update pointers base at GUIDs to prevent access to non-existed already object
     if (!UpdatePointers())
     {
-        TC_LOG_TRACE("spells","Update pointers failed");
+        TC_LOG_DEBUG("spells","Update pointers failed");
         // cancel the spell if UpdatePointers() returned false, something wrong happened there
         cancel();
         return;
@@ -3473,14 +3473,14 @@ void Spell::_cast(bool skipCheck)
     // cancel at lost explicit target during cast
     if (m_targets.GetObjectTargetGUID() && !m_targets.GetObjectTarget())
     {
-        TC_LOG_TRACE("spells","ObjectTargetGuid with no object target ");
+        TC_LOG_DEBUG("spells","ObjectTargetGuid with no object target ");
         cancel();
         return;
     }
 
     if (Player* playerCaster = m_caster->ToPlayer())
     {
-        TC_LOG_TRACE("spells","cast is a player");
+        TC_LOG_DEBUG("spells","cast is a player");
         // now that we've done the basic check, now run the scripts
         // should be done before the spell is actually executed
         sScriptMgr->OnPlayerSpellCast(playerCaster, this, skipCheck);
@@ -3497,7 +3497,7 @@ void Spell::_cast(bool skipCheck)
     }
 
     SetExecutedCurrently(true);
-    TC_LOG_TRACE("spells","currently executed set");
+    TC_LOG_DEBUG("spells","currently executed set");
 
     // Should this be done for original caster?
     Player* modOwner = m_caster->GetSpellModOwner();
@@ -3507,14 +3507,14 @@ void Spell::_cast(bool skipCheck)
         // if not successfully cast, will be remove in finish(false)
         modOwner->SetSpellModTakingSpell(this, true);
     }
-    TC_LOG_TRACE("spells","triggered charges set, if any");
+    TC_LOG_DEBUG("spells","triggered charges set, if any");
 
     CallScriptBeforeCastHandlers();
 
     // skip check if done already (for instant cast spells for example)
     if (!skipCheck)
     {
-        TC_LOG_TRACE("spells","skipCheck is false");
+        TC_LOG_DEBUG("spells","skipCheck is false");
         auto cleanupSpell = [this, modOwner](SpellCastResult res, uint32* p1 = nullptr, uint32* p2 = nullptr)
         {
             SendCastResult(res, p1, p2);
@@ -3534,7 +3534,7 @@ void Spell::_cast(bool skipCheck)
             cleanupSpell(castResult, &param1, &param2);
             return;
         }
-        TC_LOG_TRACE("spells","spell cast was okay");
+        TC_LOG_DEBUG("spells","spell cast was okay");
 
         // additional check after cast bar completes (must not be in CheckCast)
         // if trade not complete then remember it in trade data
@@ -3554,7 +3554,7 @@ void Spell::_cast(bool skipCheck)
                 }
             }
         }
-        TC_LOG_TRACE("spells","check on trade window passed");
+        TC_LOG_DEBUG("spells","check on trade window passed");
 
         // check diminishing returns (again, only after finish cast bar, tested on retail)
         if (Unit* target = m_targets.GetUnitTarget())
@@ -3582,7 +3582,7 @@ void Spell::_cast(bool skipCheck)
                 }
             }
         }
-        TC_LOG_TRACE("spells","diminishing returns checked");
+        TC_LOG_DEBUG("spells","diminishing returns checked");
     }
 
     SelectSpellTargets();
@@ -3590,7 +3590,7 @@ void Spell::_cast(bool skipCheck)
     // Spell may be finished after target map check
     if (m_spellState == SPELL_STATE_FINISHED)
     {
-        TC_LOG_TRACE("spells","spell state is finished");
+        TC_LOG_DEBUG("spells","spell state is finished");
         SendInterrupted(0);
 
         if (modOwner)
@@ -3643,7 +3643,7 @@ void Spell::_cast(bool skipCheck)
     PrepareScriptHitHandlers();
 
     HandleLaunchPhase();
-    TC_LOG_TRACE("spells","spell has been cast..?");
+    TC_LOG_DEBUG("spells","spell has been cast..?");
 
     // we must send smsg_spell_go packet before m_castItem delete in TakeCastItem()...
     SendSpellGo();
@@ -3666,17 +3666,17 @@ void Spell::_cast(bool skipCheck)
 
         if (m_caster->HasUnitState(UNIT_STATE_CASTING) && !m_caster->IsNonMeleeSpellCast(false, false, true))
             m_caster->ClearUnitState(UNIT_STATE_CASTING);
-        TC_LOG_TRACE("spells","delay start spell cast done");
+        TC_LOG_DEBUG("spells","delay start spell cast done");
     }
     else
     {
         // Immediate spell, no big deal
         handle_immediate();
-        TC_LOG_TRACE("spells","immediate spellcast done");
+        TC_LOG_DEBUG("spells","immediate spellcast done");
     }
 
     CallScriptAfterCastHandlers();
-    TC_LOG_TRACE("spells","Called ScriptAfterCastHandlers");
+    TC_LOG_DEBUG("spells","Called ScriptAfterCastHandlers");
 
     if (std::vector<int32> const* spell_triggered = sSpellMgr->GetSpellLinked(m_spellInfo->Id))
     {
@@ -3686,7 +3686,7 @@ void Spell::_cast(bool skipCheck)
                 m_caster->RemoveAurasDueToSpell(-id);
             else
                 m_caster->CastSpell(m_targets.GetUnitTarget() ? m_targets.GetUnitTarget() : m_caster, id, true);
-            TC_LOG_TRACE("spells","workimg linked spells");
+            TC_LOG_DEBUG("spells","workimg linked spells");
         }
     }
 
@@ -3700,7 +3700,7 @@ void Spell::_cast(bool skipCheck)
     }
 
     SetExecutedCurrently(false);
-    TC_LOG_TRACE("spells","executed currently set to false");
+    TC_LOG_DEBUG("spells","executed currently set to false");
 
     if (!m_originalCaster)
         return;
@@ -3720,13 +3720,13 @@ void Spell::_cast(bool skipCheck)
         hitMask |= PROC_HIT_NORMAL;
 
     m_originalCaster->ProcSkillsAndAuras(nullptr, procAttacker, PROC_FLAG_NONE, PROC_SPELL_TYPE_MASK_ALL, PROC_SPELL_PHASE_CAST, hitMask, this, nullptr, nullptr);
-    TC_LOG_TRACE("spells","proc'd skills and auras");
+    TC_LOG_DEBUG("spells","proc'd skills and auras");
 
     // Call CreatureAI hook OnSuccessfulSpellCast
     if (Creature* caster = m_originalCaster->ToCreature())
         if (caster->IsAIEnabled)
             caster->AI()->OnSpellCastFinished(GetSpellInfo(), SPELL_FINISHED_SUCCESSFUL_CAST);
-    TC_LOG_TRACE("spells","_cast complete");
+    TC_LOG_DEBUG("spells","_cast complete");
 }
 
 void Spell::handle_immediate()
@@ -4330,11 +4330,11 @@ void Spell::SendMountResult(MountResult result)
 
 void Spell::SendSpellStart()
 {
-    TC_LOG_TRACE("spells","Spell::SendSpellStart");
+    TC_LOG_DEBUG("spells","Spell::SendSpellStart");
     if (!IsNeedSendToClient())
         return;
 
-    TC_LOG_TRACE("spells","Sending spell start to client");
+    TC_LOG_DEBUG("spells","Sending spell start to client");
     //TC_LOG_DEBUG("spells", "Sending SMSG_SPELL_START id=%u", m_spellInfo->Id);
 
     uint32 castFlags = CAST_FLAG_HAS_TRAJECTORY;
@@ -5450,7 +5450,7 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
     // check death state
     if (!m_caster->IsAlive() && !m_spellInfo->IsPassive() && !(m_spellInfo->HasAttribute(SPELL_ATTR0_CASTABLE_WHILE_DEAD) || (IsTriggered() && !m_triggeredByAuraSpell)))
         return SPELL_FAILED_CASTER_DEAD;
-    TC_LOG_TRACE("spells","caster is alive, spell is not passive and other stuff");
+    TC_LOG_DEBUG("spells","caster is alive, spell is not passive and other stuff");
 
     // Prevent cheating in case the player has an immunity effect and tries to interact with a non-allowed gameobject. The error message is handled by the client so we don't report anything here
     if (m_caster->ToPlayer() && m_targets.GetGOTarget())
@@ -5458,7 +5458,7 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
         if (m_targets.GetGOTarget()->GetGOInfo()->CannotBeUsedUnderImmunity() && m_caster->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE))
             return SPELL_FAILED_DONT_REPORT;
     }
-    TC_LOG_TRACE("spells","caster does not have unit_field_flags and unit_flag_immune");
+    TC_LOG_DEBUG("spells","caster does not have unit_field_flags and unit_flag_immune");
 
     // check cooldowns to prevent cheating
     if (!m_spellInfo->IsPassive())
@@ -5482,26 +5482,26 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
                 return SPELL_FAILED_NOT_READY;
         }
     }
-    TC_LOG_TRACE("spells","spell passed cooldown checks");
+    TC_LOG_DEBUG("spells","spell passed cooldown checks");
 
     if (m_spellInfo->HasAttribute(SPELL_ATTR7_IS_CHEAT_SPELL) && !m_caster->HasFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_ALLOW_CHEAT_SPELLS))
     {
         m_customError = SPELL_CUSTOM_ERROR_GM_ONLY;
         return SPELL_FAILED_CUSTOM_ERROR;
     }
-    TC_LOG_TRACE("spells","spell is not a cheat");
+    TC_LOG_DEBUG("spells","spell is not a cheat");
 
     // Check global cooldown
     if (strict && !(_triggeredCastFlags & TRIGGERED_IGNORE_GCD) && HasGlobalCooldown())
         return !m_spellInfo->HasAttribute(SPELL_ATTR0_DISABLED_WHILE_ACTIVE) ? SPELL_FAILED_NOT_READY : SPELL_FAILED_DONT_REPORT;
-    TC_LOG_TRACE("spells","spell not blocked by global cooldown.");
+    TC_LOG_DEBUG("spells","spell not blocked by global cooldown.");
 
     // only triggered spells can be processed an ended battleground
     if (!IsTriggered() && m_caster->GetTypeId() == TYPEID_PLAYER)
         if (Battleground* bg = m_caster->ToPlayer()->GetBattleground())
             if (bg->GetStatus() == STATUS_WAIT_LEAVE)
                 return SPELL_FAILED_DONT_REPORT;
-    TC_LOG_TRACE("spells","passed ended battleground issue");
+    TC_LOG_DEBUG("spells","passed ended battleground issue");
 
     if (m_caster->GetTypeId() == TYPEID_PLAYER && VMAP::VMapFactory::createOrGetVMapManager()->isLineOfSightCalcEnabled())
     {
@@ -5513,14 +5513,14 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
             !m_caster->IsOutdoors())
             return SPELL_FAILED_ONLY_INDOORS;
     }
-    TC_LOG_TRACE("spells","passed player indoor/outdoor issues");
+    TC_LOG_DEBUG("spells","passed player indoor/outdoor issues");
 
     if (m_spellInfo->HasAttribute(SPELL_ATTR8_BATTLE_RESURRECTION) && m_caster->GetMap()->IsRaid())
         if (InstanceScript* instance = m_caster->GetInstanceScript())
             if (instance->IsEncounterInProgress())
                 if (!instance->GetCombatResurrectionCharges())
                     return SPELL_FAILED_IN_COMBAT_RES_LIMIT_REACHED;
-    TC_LOG_TRACE("spells","passed combat rez checks.");
+    TC_LOG_DEBUG("spells","passed combat rez checks.");
 
     // only check at first call, Stealth auras are already removed at second call
     // for now, ignore triggered spells
@@ -5549,13 +5549,13 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
                 return SPELL_FAILED_ONLY_STEALTHED;
         }
     }
-    TC_LOG_TRACE("spells","passed stance/form checks");
+    TC_LOG_DEBUG("spells","passed stance/form checks");
 
     if (!(_triggeredCastFlags & TRIGGERED_IGNORE_BLOCKED_SPELL_FAMILY))
         for (AuraEffect const* blocked : m_caster->GetAuraEffectsByType(SPELL_AURA_BLOCK_SPELL_FAMILY))
             if (!blocked->GetMiscValue() || uint32(blocked->GetMiscValue()) == m_spellInfo->SpellFamilyName)
                 return SPELL_FAILED_SPELL_UNAVAILABLE;
-    TC_LOG_TRACE("spells","passed silenced school checks");
+    TC_LOG_DEBUG("spells","passed silenced school checks");
 
     bool reqCombat = true;
     Unit::AuraEffectList const& stateAuras = m_caster->GetAuraEffectsByType(SPELL_AURA_ABILITY_IGNORE_AURASTATE);
@@ -5590,7 +5590,7 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
         if (reqCombat && m_caster->IsInCombat() && !m_spellInfo->CanBeUsedInCombat())
             return SPELL_FAILED_AFFECTING_COMBAT;
     }
-    TC_LOG_TRACE("spells","passed caster aura states");
+    TC_LOG_DEBUG("spells","passed caster aura states");
 
     // cancel autorepeat spells if cast start when moving
     // (not wand currently autorepeat cast delayed to moving stop anyway in spell update code)
@@ -5602,7 +5602,7 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
             (IsAutoRepeat() || (m_spellInfo->AuraInterruptFlags & AURA_INTERRUPT_FLAG_NOT_SEATED) != 0))
             return SPELL_FAILED_MOVING;
     }
-    TC_LOG_TRACE("spells","spell passed movement flag");
+    TC_LOG_DEBUG("spells","spell passed movement flag");
 
     // Check vehicle flags
     if (!(_triggeredCastFlags & TRIGGERED_IGNORE_CASTER_MOUNTED_OR_ON_VEHICLE))
@@ -5611,7 +5611,7 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
         if (vehicleCheck != SPELL_CAST_OK)
             return vehicleCheck;
     }
-    TC_LOG_TRACE("spells","spell passed vehicle check");
+    TC_LOG_DEBUG("spells","spell passed vehicle check");
 
     // check spell cast conditions from database
     {
@@ -5634,7 +5634,7 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
             return SPELL_FAILED_BAD_TARGETS;
         }
     }
-    TC_LOG_TRACE("spells","passed spell check conditions");
+    TC_LOG_DEBUG("spells","passed spell check conditions");
 
     // Don't check explicit target for passive spells (workaround) (check should be skipped only for learn case)
     // those spells may have incorrect target entries or not filled at all (for example 15332)
@@ -5651,7 +5651,7 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
         if (castResult != SPELL_CAST_OK)
             return castResult;
     }
-    TC_LOG_TRACE("spells","spell passed explicit target checks");
+    TC_LOG_DEBUG("spells","spell passed explicit target checks");
 
     if (Unit* target = m_targets.GetUnitTarget())
     {
@@ -5681,7 +5681,7 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
             }
         }
     }
-    TC_LOG_TRACE("spells","target passed los checks");
+    TC_LOG_DEBUG("spells","target passed los checks");
 
     // Check for line of sight for spells with dest
     if (m_targets.HasDst())
@@ -5692,7 +5692,7 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
         if (!m_spellInfo->HasAttribute(SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS) && !m_spellInfo->HasAttribute(SPELL_ATTR5_SKIP_CHECKCAST_LOS_CHECK) && !DisableMgr::IsDisabledFor(DISABLE_TYPE_SPELL, m_spellInfo->Id, nullptr, SPELL_DISABLE_LOS) && !m_caster->IsWithinLOS(x, y, z, LINEOFSIGHT_ALL_CHECKS, VMAP::ModelIgnoreFlags::M2))
             return SPELL_FAILED_LINE_OF_SIGHT;
     }
-    TC_LOG_TRACE("spells","spell passed los checks");
+    TC_LOG_DEBUG("spells","spell passed los checks");
 
     // check pet presence
     for (int j = 0; j < MAX_SPELL_EFFECTS; ++j)
@@ -5709,7 +5709,7 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
             break;
         }
     }
-    TC_LOG_TRACE("spells","spell passed pet presence checks");
+    TC_LOG_DEBUG("spells","spell passed pet presence checks");
 
     // Spell cast only in battleground
     if (m_spellInfo->HasAttribute(SPELL_ATTR3_BATTLEGROUND) &&  m_caster->GetTypeId() == TYPEID_PLAYER)
@@ -5724,7 +5724,7 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
             if (castResult != SPELL_CAST_OK)
                 return castResult;
         }
-    TC_LOG_TRACE("spells","spell passed player arena checks");
+    TC_LOG_DEBUG("spells","spell passed player arena checks");
 
     // zone check
     if (m_caster->GetTypeId() == TYPEID_UNIT || !m_caster->ToPlayer()->IsGameMaster())
@@ -5736,7 +5736,7 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
         if (locRes != SPELL_CAST_OK)
             return locRes;
     }
-    TC_LOG_TRACE("spells","spell passed unit zone checks");
+    TC_LOG_DEBUG("spells","spell passed unit zone checks");
 
     // not let players cast spells at mount (and let do it to creatures)
     if (m_caster->IsMounted() && m_caster->GetTypeId() == TYPEID_PLAYER && !(_triggeredCastFlags & TRIGGERED_IGNORE_CASTER_MOUNTED_OR_ON_VEHICLE) &&
@@ -5747,7 +5747,7 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
         else
             return SPELL_FAILED_NOT_MOUNTED;
     }
-    TC_LOG_TRACE("spells","spell passed mount checks");
+    TC_LOG_DEBUG("spells","spell passed mount checks");
 
     // check spell focus object
     if (m_spellInfo->RequiresSpellFocus)
@@ -5756,7 +5756,7 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
         if (!focusObject)
             return SPELL_FAILED_REQUIRES_SPELL_FOCUS;
     }
-    TC_LOG_TRACE("spells","spell passed focus checks");
+    TC_LOG_DEBUG("spells","spell passed focus checks");
 
     SpellCastResult castResult = SPELL_CAST_OK;
 
@@ -5793,7 +5793,7 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
     if (castResult != SPELL_CAST_OK)
         return castResult;
 
-    TC_LOG_TRACE("spells","passed various failed cast checks");
+    TC_LOG_DEBUG("spells","passed various failed cast checks");
     uint8 approximateAuraEffectMask = 0;
     uint8 nonAuraEffectMask = 0;
     for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
@@ -6198,7 +6198,7 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
         else if (m_spellInfo->Effects[i].IsEffect())
             nonAuraEffectMask |= 1 << i;
     }
-    TC_LOG_TRACE("spells","passed player spell type checks");
+    TC_LOG_DEBUG("spells","passed player spell type checks");
 
     for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
     {
@@ -6314,7 +6314,7 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
             default:
                 break;
         }
-        TC_LOG_TRACE("spells","passed charm checks");
+        TC_LOG_DEBUG("spells","passed charm checks");
 
         // check if target already has the same type, but more powerful aura
         if (!nonAuraEffectMask && (approximateAuraEffectMask & (1 << i)) && !m_spellInfo->IsTargetingArea())
@@ -6347,7 +6347,7 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
             if (my_trade->GetSpell())
                 return SPELL_FAILED_ITEM_ALREADY_ENCHANTED;
     }
-    TC_LOG_TRACE("spells","spell passed enchant checks");
+    TC_LOG_DEBUG("spells","spell passed enchant checks");
 
     // check if caster has at least 1 combo point for spells that require combo points
     if (m_needComboPoints)
@@ -6355,7 +6355,7 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* param1 /*= nullptr*/, uint
             if (!plrCaster->GetComboPoints())
                 return SPELL_FAILED_NO_COMBO_POINTS;
 
-    TC_LOG_TRACE("spells","spell passed all checks");
+    TC_LOG_DEBUG("spells","spell passed all checks");
     // all ok
     return SPELL_CAST_OK;
 }

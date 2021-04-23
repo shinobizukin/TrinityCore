@@ -49,8 +49,10 @@ Corpse::~Corpse() { }
 void Corpse::AddToWorld()
 {
     ///- Register the corpse for guid lookup
-    if (!IsInWorld())
+    if (!IsInWorld()) {
+        TC_LOG_DEBUG("scripts", "Adding entity %u with entry %u to world in map %u", GetGUID().GetCounter(), GetEntry(), GetMap()->GetId());
         GetMap()->GetObjectsStore().Insert<Corpse>(GetGUID(), this);
+    }
 
     Object::AddToWorld();
 }

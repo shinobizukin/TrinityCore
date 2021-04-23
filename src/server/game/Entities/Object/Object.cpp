@@ -148,6 +148,7 @@ std::string Object::_ConcatFields(uint16 startIndex, uint16 size) const
 
 void Object::AddToWorld()
 {
+    TC_LOG_DEBUG("scripts", "Adding object %u with entry %u to world", GetGUID().GetCounter(), GetEntry());
     if (m_inWorld)
         return;
 

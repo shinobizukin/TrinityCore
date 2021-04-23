@@ -55,6 +55,7 @@ void DynamicObject::AddToWorld()
     ///- Register the dynamicObject for guid lookup and for caster
     if (!IsInWorld())
     {
+        TC_LOG_DEBUG("scripts", "Adding object %u with entry %u to world in map %u", GetGUID().GetCounter(), GetEntry(), GetMap()->GetId());
         GetMap()->GetObjectsStore().Insert<DynamicObject>(GetGUID(), this);
         WorldObject::AddToWorld();
         BindToCaster();
