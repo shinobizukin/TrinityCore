@@ -562,24 +562,26 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
             TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_CAST");
             if (targets.empty())
                 break;
-
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: Has targets");
             if (e.action.cast.targetsLimit > 0 && targets.size() > e.action.cast.targetsLimit)
                 Trinity::Containers::RandomResize(targets, e.action.cast.targetsLimit);
 
             for (WorldObject* target : targets)
             {
+                TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_CAST Processing Targets");
                 // may be nullptr
                 if (go)
                     go->CastSpell(target->ToUnit(), e.action.cast.spell);
 
                 if (!IsUnit(target))
                     continue;
-
+                TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: target is unit");
                 if (!(e.action.cast.castFlags & SMARTCAST_AURA_NOT_PRESENT) || !target->ToUnit()->HasAura(e.action.cast.spell))
                 {
                     TriggerCastFlags triggerFlag = TRIGGERED_NONE;
                     if (e.action.cast.castFlags & SMARTCAST_TRIGGERED)
                     {
+                        TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: smartcast_triggered");
                         if (e.action.cast.triggerFlags)
                             triggerFlag = TriggerCastFlags(e.action.cast.triggerFlags);
                         else
@@ -588,6 +590,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
 
                     if (me)
                     {
+                        TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: target is me");
                         if (e.action.cast.castFlags & SMARTCAST_INTERRUPT_PREVIOUS)
                             me->InterruptNonMeleeSpells(false);
 
@@ -608,11 +611,13 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
 
                             ENSURE_AI(SmartAI, me->AI())->SetCombatMove(_allowMove);
                         }
-
+                        TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: self casting");
                         me->CastSpell(target->ToUnit(), e.action.cast.spell, triggerFlag);
                     }
-                    else if (go)
+                    else if (go) {
+                        TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: casting on target");
                         go->CastSpell(target->ToUnit(), e.action.cast.spell, triggerFlag);
+                    }
 
                     TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction:: SMART_ACTION_CAST:: %s: %u casts spell %u on target %u with castflags %u",
                         (me ? me->GetGUID() : go->GetGUID()).GetTypeName(), me ? me->GetGUID().GetCounter() : go->GetGUID().GetCounter(), e.action.cast.spell, target->GetGUID().GetCounter(), e.action.cast.castFlags);
@@ -627,13 +632,14 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
             TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_SELF_CAST");
             if (targets.empty())
                 break;
-
+            TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: Has targets");
             if (e.action.cast.targetsLimit)
                 Trinity::Containers::RandomResize(targets, e.action.cast.targetsLimit);
 
             TriggerCastFlags triggerFlags = TRIGGERED_NONE;
             if (e.action.cast.castFlags & SMARTCAST_TRIGGERED)
             {
+                TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: smart cast");
                 if (e.action.cast.triggerFlags)
                     triggerFlags = TriggerCastFlags(e.action.cast.triggerFlags);
                 else
@@ -642,15 +648,17 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
 
             for (WorldObject* target : targets)
             {
+                TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: casting on targets");
                 Unit* uTarget = target->ToUnit();
                 if (!uTarget)
                     continue;
-
+                TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: valid target");
                 if (!(e.action.cast.castFlags & SMARTCAST_AURA_NOT_PRESENT) || !uTarget->HasAura(e.action.cast.spell))
                 {
+                    TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: smartcast_aura_not_present or doesn't have aura");
                     if (e.action.cast.castFlags & SMARTCAST_INTERRUPT_PREVIOUS)
                         uTarget->InterruptNonMeleeSpells(false);
-
+                    TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: casting spell");
                     uTarget->CastSpell(uTarget, e.action.cast.spell, triggerFlags);
                 }
             }
@@ -2965,8 +2973,12 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
                 ref = scriptTrigger;
 
             if (ref)
-                if (ObjectVector const* stored = GetStoredTargetVector(e.target.stored.id, *ref))
+                if (ObjectVector const* stored = GetStoredTargetVector(e.target.stored.id, *ref)) {
+                    TC_LOG_DEBUG("scripts.ai", "assigning targets");
                     targets.assign(stored->begin(), stored->end());
+                } else {
+                    TC_LOG_DEBUG("scripts.ai", "no targets found");
+                }
             break;
         }
         case SMART_TARGET_CLOSEST_CREATURE:
@@ -3100,16 +3112,16 @@ void SmartScript::GetWorldObjectsInDist(ObjectVector& targets, float dist)
 
 void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, uint32 var1, bool bvar, SpellInfo const* spell, GameObject* gob)
 {
-    TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent event_type %u, action_type %u, target_type %u",e.GetEventType(),e.GetActionType(),e.GetTargetType());
+    TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent entryorguid %i, event_type %u, action_type %u, target_type %u",e.entryOrGuid, e.GetEventType(),e.GetActionType(),e.GetTargetType());
     if (!e.active && e.GetEventType() != SMART_EVENT_LINK)
         return;
-
+    TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent not smart event link");
     if ((e.event.event_phase_mask && !IsInPhase(e.event.event_phase_mask)) || ((e.event.event_flags & SMART_EVENT_FLAG_NOT_REPEATABLE) && e.runOnce))
         return;
-
+    TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent passed event phase checks.");
     if (!(e.event.event_flags & SMART_EVENT_FLAG_WHILE_CHARMED) && IsCharmedCreature(me))
         return;
-
+    TC_LOG_DEBUG("scripts.ai", "SmartScript:ProcessEvent passed charmed check. entering switch.");
     switch (e.GetEventType())
     {
         case SMART_EVENT_LINK://special handling

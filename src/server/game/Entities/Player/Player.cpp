@@ -10312,6 +10312,7 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
     ItemTemplate const* pProto = sObjectMgr->GetItemTemplate(entry);
     if (!pProto)
     {
+        TC_LOG_DEBUG("entities.player.items","No ItemTemplate found.");
         if (no_space_count)
             *no_space_count = count;
         return swap ? EQUIP_ERR_CANT_SWAP : EQUIP_ERR_ITEM_NOT_FOUND;
@@ -10322,6 +10323,7 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
         // item used
         if (pItem->m_lootGenerated)
         {
+            TC_LOG_DEBUG("entities.player.items","Item has been used.  Returning error.");
             if (no_space_count)
                 *no_space_count = count;
             return EQUIP_ERR_LOOT_GONE;
@@ -10329,6 +10331,7 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
 
         if (pItem->IsBindedNotWith(this))
         {
+            TC_LOG_DEBUG("entities.player.items","Item is not binded with player. Returning error.");
             if (no_space_count)
                 *no_space_count = count;
             return EQUIP_ERR_NOT_OWNER;
@@ -10340,8 +10343,10 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
     InventoryResult res = CanTakeMoreSimilarItems(entry, count, pItem, &no_similar_count);
     if (res != EQUIP_ERR_OK)
     {
+        TC_LOG_DEBUG("entities.player.items","Inventory Result is not EQUIP_ERR_OK");
         if (count == no_similar_count)
         {
+            TC_LOG_DEBUG("entities.player.items","item has no similar count, returning InventoryResult.");
             if (no_space_count)
                 *no_space_count = no_similar_count;
             return res;
@@ -10352,9 +10357,11 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
     // in specific slot
     if (bag != NULL_BAG && slot != NULL_SLOT)
     {
+        TC_LOG_DEBUG("entities.player.items","item is in specific bag slot.");
         res = CanStoreItem_InSpecificSlot(bag, slot, dest, pProto, count, swap, pItem);
         if (res != EQUIP_ERR_OK)
         {
+            TC_LOG_DEBUG("entities.player.items","Inventory Result is not EQUIP_ERR_OK");
             if (no_space_count)
                 *no_space_count = count + no_similar_count;
             return res;
@@ -10362,6 +10369,7 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
 
         if (count == 0)
         {
+            TC_LOG_DEBUG("entities.player.items","count is 0, returning error");
             if (no_similar_count == 0)
                 return EQUIP_ERR_OK;
 
@@ -10381,9 +10389,11 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
         {
             if (bag == INVENTORY_SLOT_BAG_0)               // inventory
             {
+                TC_LOG_DEBUG("entities.player.items","bag is slot bag 0.");
                 res = CanStoreItem_InInventorySlots(INVENTORY_SLOT_ITEM_START, INVENTORY_SLOT_ITEM_END, dest, pProto, count, true, pItem, bag, slot);
                 if (res != EQUIP_ERR_OK)
                 {
+                    TC_LOG_DEBUG("entities.player.items","Inventory Result is not EQUIP_ERR_OK");
                     if (no_space_count)
                         *no_space_count = count + no_similar_count;
                     return res;
@@ -10391,6 +10401,7 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
 
                 if (count == 0)
                 {
+                    TC_LOG_DEBUG("entities.player.items","count is 0, returning error");
                     if (no_similar_count == 0)
                         return EQUIP_ERR_OK;
 
@@ -10401,6 +10412,7 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
             }
             else                                            // equipped bag
             {
+                TC_LOG_DEBUG("entities.player.items","bag is not slot bag 0.");
                 // we need check 2 time (specialized/non_specialized), use NULL_BAG to prevent skipping bag
                 res = CanStoreItem_InBag(bag, dest, pProto, count, true, false, pItem, NULL_BAG, slot);
                 if (res != EQUIP_ERR_OK)
@@ -10408,6 +10420,7 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
 
                 if (res != EQUIP_ERR_OK)
                 {
+                    TC_LOG_DEBUG("entities.player.items","Inventory Result is not EQUIP_ERR_OK");
                     if (no_space_count)
                         *no_space_count = count + no_similar_count;
                     return res;
@@ -10415,6 +10428,7 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
 
                 if (count == 0)
                 {
+                    TC_LOG_DEBUG("entities.player.items","count is 0, returning error");
                     if (no_similar_count == 0)
                         return EQUIP_ERR_OK;
 
@@ -10428,9 +10442,11 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
         // search free slot in bag for place to
         if (bag == INVENTORY_SLOT_BAG_0)                     // inventory
         {
+            TC_LOG_DEBUG("entities.player.items","Slot is in bag 0");
             res = CanStoreItem_InInventorySlots(INVENTORY_SLOT_ITEM_START, INVENTORY_SLOT_ITEM_END, dest, pProto, count, false, pItem, bag, slot);
             if (res != EQUIP_ERR_OK)
             {
+                TC_LOG_DEBUG("entities.player.items","Inventory Result is not EQUIP_ERR_OK");
                 if (no_space_count)
                     *no_space_count = count + no_similar_count;
                 return res;
@@ -10438,6 +10454,7 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
 
             if (count == 0)
             {
+                TC_LOG_DEBUG("entities.player.items","count is 0, returning error");
                 if (no_similar_count == 0)
                     return EQUIP_ERR_OK;
 
@@ -10448,12 +10465,14 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
         }
         else                                                // equipped bag
         {
+            TC_LOG_DEBUG("entities.player.items","Slot is not in bag 0.");
             res = CanStoreItem_InBag(bag, dest, pProto, count, false, false, pItem, NULL_BAG, slot);
             if (res != EQUIP_ERR_OK)
                 res = CanStoreItem_InBag(bag, dest, pProto, count, false, true, pItem, NULL_BAG, slot);
 
             if (res != EQUIP_ERR_OK)
             {
+                TC_LOG_DEBUG("entities.player.items","Inventory Result is not EQUIP_ERR_OK");
                 if (no_space_count)
                     *no_space_count = count + no_similar_count;
                 return res;
@@ -10461,6 +10480,7 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
 
             if (count == 0)
             {
+                TC_LOG_DEBUG("entities.player.items","count is 0, returning error");
                 if (no_similar_count == 0)
                     return EQUIP_ERR_OK;
 
@@ -10476,9 +10496,11 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
     // search stack for merge to
     if (pProto->GetMaxStackSize() != 1)
     {
+        TC_LOG_DEBUG("entities.player.items","Item allows stacks greater than 1.");
         res = CanStoreItem_InInventorySlots(INVENTORY_SLOT_ITEM_START, INVENTORY_SLOT_ITEM_END, dest, pProto, count, true, pItem, bag, slot);
         if (res != EQUIP_ERR_OK)
         {
+            TC_LOG_DEBUG("entities.player.items","Inventory Result is not EQUIP_ERR_OK");
             if (no_space_count)
                 *no_space_count = count + no_similar_count;
             return res;
@@ -10486,6 +10508,7 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
 
         if (count == 0)
         {
+            TC_LOG_DEBUG("entities.player.items","count is 0, returning error");
             if (no_similar_count == 0)
                 return EQUIP_ERR_OK;
 
@@ -10496,6 +10519,7 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
 
         if (pProto->GetBagFamily())
         {
+            TC_LOG_DEBUG("entities.player.items","Item Template has bag family.  Checking inventory slots.");
             for (uint32 i = INVENTORY_SLOT_BAG_START; i < INVENTORY_SLOT_BAG_END; i++)
             {
                 res = CanStoreItem_InBag(i, dest, pProto, count, true, false, pItem, bag, slot);
@@ -10504,6 +10528,7 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
 
                 if (count == 0)
                 {
+                    TC_LOG_DEBUG("entities.player.items","count is 0, returning error");
                     if (no_similar_count == 0)
                         return EQUIP_ERR_OK;
 
@@ -10514,6 +10539,7 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
             }
         }
 
+        TC_LOG_DEBUG("entities.player.items","Checking inventory bag slots.");
         for (uint32 i = INVENTORY_SLOT_BAG_START; i < INVENTORY_SLOT_BAG_END; i++)
         {
             res = CanStoreItem_InBag(i, dest, pProto, count, true, true, pItem, bag, slot);
@@ -10522,6 +10548,7 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
 
             if (count == 0)
             {
+                TC_LOG_DEBUG("entities.player.items","count is 0, returning error");
                 if (no_similar_count == 0)
                     return EQUIP_ERR_OK;
 
@@ -10535,6 +10562,7 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
     // search free slot - special bag case
     if (pProto->GetBagFamily())
     {
+        TC_LOG_DEBUG("entities.player.items","Item Template is in bag family.");
         for (uint32 i = INVENTORY_SLOT_BAG_START; i < INVENTORY_SLOT_BAG_END; i++)
         {
             res = CanStoreItem_InBag(i, dest, pProto, count, false, false, pItem, bag, slot);
@@ -10543,6 +10571,7 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
 
             if (count == 0)
             {
+                TC_LOG_DEBUG("entities.player.items","count is 0, returning error");
                 if (no_similar_count == 0)
                     return EQUIP_ERR_OK;
 
@@ -10564,14 +10593,17 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
         searchSlotStart = INVENTORY_SLOT_BAG_START;
 
     res = CanStoreItem_InInventorySlots(searchSlotStart, INVENTORY_SLOT_ITEM_END, dest, pProto, count, false, pItem, bag, slot);
+    TC_LOG_DEBUG("entities.player.items","InventoryResult for new bag.");
     if (res != EQUIP_ERR_OK)
     {
+        TC_LOG_DEBUG("entities.player.items","Inventory Result is not EQUIP_ERR_OK");
         if (no_space_count)
             *no_space_count = count + no_similar_count;
         return res;
     }
     if (count == 0)
     {
+        TC_LOG_DEBUG("entities.player.items","count is 0, returning error");
         if (no_similar_count == 0)
             return EQUIP_ERR_OK;
 
@@ -10582,12 +10614,14 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
 
     for (uint8 i = INVENTORY_SLOT_BAG_START; i < INVENTORY_SLOT_BAG_END; i++)
     {
+        TC_LOG_DEBUG("entities.player.items","Checking inventory bag slots.");
         res = CanStoreItem_InBag(i, dest, pProto, count, false, true, pItem, bag, slot);
         if (res != EQUIP_ERR_OK)
             continue;
 
         if (count == 0)
         {
+            TC_LOG_DEBUG("entities.player.items","count is 0, returning error");
             if (no_similar_count == 0)
                 return EQUIP_ERR_OK;
 
@@ -10599,7 +10633,7 @@ InventoryResult Player::CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec &des
 
     if (no_space_count)
         *no_space_count = count + no_similar_count;
-
+    TC_LOG_DEBUG("entities.player.items","Returning ERR_INV_FULL");
     return EQUIP_ERR_INV_FULL;
 }
 
@@ -11447,22 +11481,28 @@ Item* Player::_StoreItem(uint16 pos, Item* pItem, uint32 count, bool clone, bool
 
     if (!pItem2)
     {
+        TC_LOG_DEBUG("entities.player.items", "Item by position is missing.");
         if (clone)
             pItem = pItem->CloneItem(count, this);
         else
             pItem->SetCount(count);
 
-        if (!pItem)
+        if (!pItem) {
+            TC_LOG_DEBUG("entities.player.items", "Item object is a nullptr.");
             return nullptr;
+        }
 
         if (pItem->GetTemplate()->GetBonding() == BIND_ON_ACQUIRE ||
             pItem->GetTemplate()->GetBonding() == BIND_QUEST ||
-            (pItem->GetTemplate()->GetBonding() == BIND_ON_EQUIP && IsBagPos(pos)))
+            (pItem->GetTemplate()->GetBonding() == BIND_ON_EQUIP && IsBagPos(pos))) {
+            TC_LOG_DEBUG("entities.player.items", "setting binding for item.");
             pItem->SetBinding(true);
+        }
 
         Bag* pBag = (bag == INVENTORY_SLOT_BAG_0) ? nullptr : GetBagByPos(bag);
         if (!pBag)
         {
+            TC_LOG_DEBUG("entities.player.items", "bag %u is missing.", bag);
             m_items[slot] = pItem;
             SetGuidValue(PLAYER_FIELD_INV_SLOT_HEAD + (slot * 2), pItem->GetGUID());
             pItem->SetGuidValue(ITEM_FIELD_CONTAINED, GetGUID());
@@ -11471,11 +11511,14 @@ Item* Player::_StoreItem(uint16 pos, Item* pItem, uint32 count, bool clone, bool
             pItem->SetSlot(slot);
             pItem->SetContainer(nullptr);
         }
-        else
+        else {
+            TC_LOG_DEBUG("entities.player.items", "Storing item in bag %u.",bag);
             pBag->StoreItem(slot, pItem, update);
+        }
 
         if (IsInWorld() && update)
         {
+            TC_LOG_DEBUG("entities.player.items", "Item is in world, updating.");
             pItem->AddToWorld();
             pItem->SendUpdateToPlayer(this);
         }
@@ -11490,21 +11533,29 @@ Item* Player::_StoreItem(uint16 pos, Item* pItem, uint32 count, bool clone, bool
         if (bag == INVENTORY_SLOT_BAG_0 || (bag >= INVENTORY_SLOT_BAG_START && bag < INVENTORY_SLOT_BAG_END))
             ApplyItemObtainSpells(pItem, true);
 
+        TC_LOG_DEBUG("entities.player.items", "returning item.");
         return pItem;
     }
     else
     {
+        TC_LOG_DEBUG("entities.player.items", "Item by position does exist.");
         if (pItem2->GetTemplate()->GetBonding() == BIND_ON_ACQUIRE ||
             pItem2->GetTemplate()->GetBonding() == BIND_QUEST ||
-            (pItem2->GetTemplate()->GetBonding() == BIND_ON_EQUIP && IsBagPos(pos)))
+            (pItem2->GetTemplate()->GetBonding() == BIND_ON_EQUIP && IsBagPos(pos))) {
+            TC_LOG_DEBUG("entities.player.items", "binding item.");
             pItem2->SetBinding(true);
+        }
 
         pItem2->SetCount(pItem2->GetCount() + count);
-        if (IsInWorld() && update)
+        if (IsInWorld() && update) 
+        {
+            TC_LOG_DEBUG("entities.player.items", "item is in world, updating.");
             pItem2->SendUpdateToPlayer(this);
+        }
 
         if (!clone)
         {
+            TC_LOG_DEBUG("entities.player.items", "item is not a clone, deleting.");
             // delete item (it not in any slot currently)
             if (IsInWorld() && update)
             {
@@ -11529,6 +11580,7 @@ Item* Player::_StoreItem(uint16 pos, Item* pItem, uint32 count, bool clone, bool
         if (bag == INVENTORY_SLOT_BAG_0 || (bag >= INVENTORY_SLOT_BAG_START && bag < INVENTORY_SLOT_BAG_END))
             ApplyItemObtainSpells(pItem2, true);
 
+        TC_LOG_DEBUG("entities.player.items", "returning Item by position.");
         return pItem2;
     }
 }
@@ -11833,6 +11885,7 @@ void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
 
         if (pItem->HasFlag(ITEM_FIELD_FLAGS, ITEM_FIELD_FLAG_WRAPPED))
         {
+            TC_LOG_DEBUG("entities.player.items", "Player::DestroyItem: Has ITEM_FIELD_FLAG_WRAPPED, deleting.");
             CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GIFT);
 
             stmt->setUInt32(0, pItem->GetGUID().GetCounter());
@@ -11881,7 +11934,10 @@ void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
             m_items[slot] = nullptr;
         }
         else if (Bag* pBag = GetBagByPos(bag))
+        {
+            TC_LOG_DEBUG("entities.player.items","Running bag RemoveItem method.");
             pBag->RemoveItem(slot, update);
+        }
 
         // Delete rolled money / loot from db.
         // MUST be done before RemoveFromWorld() or GetTemplate() fails
@@ -11890,6 +11946,7 @@ void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
 
         if (IsInWorld() && update)
         {
+            TC_LOG_DEBUG("entities.player.items","Item is in world and update is true.");
             pItem->RemoveFromWorld();
             pItem->DestroyForPlayer(this);
         }
@@ -11916,6 +11973,7 @@ void Player::DestroyItemCount(uint32 itemEntry, uint32 count, bool update, bool 
             {
                 if (item->GetCount() + remcount <= count)
                 {
+                    TC_LOG_DEBUG("entities.player.items", "Player::DestroyItemCount: Destroying equipped item.");
                     // all items in inventory can unequipped
                     remcount += item->GetCount();
                     DestroyItem(INVENTORY_SLOT_BAG_0, i, update);
@@ -11925,6 +11983,7 @@ void Player::DestroyItemCount(uint32 itemEntry, uint32 count, bool update, bool 
                 }
                 else
                 {
+                    TC_LOG_DEBUG("entities.player.items", "Player::DestroyItemCount: Checking quest item in equipped item.");
                     ItemRemovedQuestCheck(item->GetEntry(), count - remcount);
                     item->SetCount(item->GetCount() - count + remcount);
                     if (IsInWorld() && update)
@@ -11950,6 +12009,7 @@ void Player::DestroyItemCount(uint32 itemEntry, uint32 count, bool update, bool 
                         // all items in bags can be unequipped
                         if (item->GetCount() + remcount <= count)
                         {
+                            TC_LOG_DEBUG("entities.player.items", "Player::DestroyItemCount: Destroying item in bag.");
                             remcount += item->GetCount();
                             DestroyItem(i, j, update);
 
@@ -11958,6 +12018,7 @@ void Player::DestroyItemCount(uint32 itemEntry, uint32 count, bool update, bool 
                         }
                         else
                         {
+                            TC_LOG_DEBUG("entities.player.items", "Player::DestroyItemCount: Checking quest item bag.");
                             ItemRemovedQuestCheck(item->GetEntry(), count - remcount);
                             item->SetCount(item->GetCount() - count + remcount);
                             if (IsInWorld() && update)
@@ -11982,6 +12043,7 @@ void Player::DestroyItemCount(uint32 itemEntry, uint32 count, bool update, bool 
                 {
                     if (!unequip_check || CanUnequipItem(INVENTORY_SLOT_BAG_0 << 8 | i, false) == EQUIP_ERR_OK)
                     {
+                        TC_LOG_DEBUG("entities.player.items", "Player::DestroyItemCount: Destroying item in equipment and bag list.");
                         remcount += item->GetCount();
                         DestroyItem(INVENTORY_SLOT_BAG_0, i, update);
 
@@ -11991,6 +12053,7 @@ void Player::DestroyItemCount(uint32 itemEntry, uint32 count, bool update, bool 
                 }
                 else
                 {
+                    TC_LOG_DEBUG("entities.player.items", "Player::DestroyItemCount: Checking quest item in equipment and bag list.");
                     ItemRemovedQuestCheck(item->GetEntry(), count - remcount);
                     item->SetCount(item->GetCount() - count + remcount);
                     if (IsInWorld() && update)
@@ -12011,6 +12074,7 @@ void Player::DestroyItemCount(uint32 itemEntry, uint32 count, bool update, bool 
             {
                 if (item->GetCount() + remcount <= count)
                 {
+                    TC_LOG_DEBUG("entities.player.items", "Player::DestroyItemCount: Destroying item in bank.");
                     remcount += item->GetCount();
                     DestroyItem(INVENTORY_SLOT_BAG_0, i, update);
                     if (remcount >= count)
@@ -12018,6 +12082,7 @@ void Player::DestroyItemCount(uint32 itemEntry, uint32 count, bool update, bool 
                 }
                 else
                 {
+                    TC_LOG_DEBUG("entities.player.items", "Player::DestroyItemCount: Checking quest item in bank.");
                     ItemRemovedQuestCheck(item->GetEntry(), count - remcount);
                     item->SetCount(item->GetCount() - count + remcount);
                     if (IsInWorld() && update)
@@ -12043,6 +12108,7 @@ void Player::DestroyItemCount(uint32 itemEntry, uint32 count, bool update, bool 
                         // all items in bags can be unequipped
                         if (item->GetCount() + remcount <= count)
                         {
+                            TC_LOG_DEBUG("entities.player.items", "Player::DestroyItemCount: Destroying item in bank bags.");
                             remcount += item->GetCount();
                             DestroyItem(i, j, update);
 
@@ -12051,6 +12117,7 @@ void Player::DestroyItemCount(uint32 itemEntry, uint32 count, bool update, bool 
                         }
                         else
                         {
+                            TC_LOG_DEBUG("entities.player.items", "Player::DestroyItemCount: Checking quest item in bank bags.");
                             ItemRemovedQuestCheck(item->GetEntry(), count - remcount);
                             item->SetCount(item->GetCount() - count + remcount);
                             if (IsInWorld() && update)
@@ -12075,6 +12142,7 @@ void Player::DestroyItemCount(uint32 itemEntry, uint32 count, bool update, bool 
                 {
                     if (!unequip_check || CanUnequipItem(INVENTORY_SLOT_BAG_0 << 8 | i, false) == EQUIP_ERR_OK)
                     {
+                        TC_LOG_DEBUG("entities.player.items", "Player::DestroyItemCount: Destroying item in bank bag list.");
                         remcount += item->GetCount();
                         DestroyItem(INVENTORY_SLOT_BAG_0, i, update);
                         if (remcount >= count)
@@ -12083,6 +12151,7 @@ void Player::DestroyItemCount(uint32 itemEntry, uint32 count, bool update, bool 
                 }
                 else
                 {
+                    TC_LOG_DEBUG("entities.player.items", "Player::DestroyItemCount: Checking quest item in bank bag list.");
                     ItemRemovedQuestCheck(item->GetEntry(), count - remcount);
                     item->SetCount(item->GetCount() - count + remcount);
                     if (IsInWorld() && update)
@@ -12103,22 +12172,31 @@ void Player::DestroyZoneLimitedItem(bool update, uint32 new_zone)
     // in inventory
     for (uint8 i = INVENTORY_SLOT_ITEM_START; i < INVENTORY_SLOT_ITEM_END; i++)
         if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
-            if (pItem->IsLimitedToAnotherMapOrZone(GetMapId(), new_zone))
+            if (pItem->IsLimitedToAnotherMapOrZone(GetMapId(), new_zone)) {
+                TC_LOG_DEBUG("entities.player.items", "Player::DestroyZoneLimitedItem: Destroying Item *u in bag %u, slot %u", 
+                    pItem->GetEntry(), INVENTORY_SLOT_BAG_0, i);
                 DestroyItem(INVENTORY_SLOT_BAG_0, i, update);
+            }
 
     // in inventory bags
     for (uint8 i = INVENTORY_SLOT_BAG_START; i < INVENTORY_SLOT_BAG_END; i++)
         if (Bag* pBag = GetBagByPos(i))
             for (uint32 j = 0; j < pBag->GetBagSize(); j++)
                 if (Item* pItem = pBag->GetItemByPos(j))
-                    if (pItem->IsLimitedToAnotherMapOrZone(GetMapId(), new_zone))
+                    if (pItem->IsLimitedToAnotherMapOrZone(GetMapId(), new_zone)) {
+                        TC_LOG_DEBUG("entities.player.items", "Player::DestroyZoneLimitedItem: Destroying Item *u in bag %u, slot %u",
+                            pItem->GetEntry(), i, j);
                         DestroyItem(i, j, update);
+                    }
 
     // in equipment and bag list
     for (uint8 i = EQUIPMENT_SLOT_START; i < INVENTORY_SLOT_BAG_END; i++)
         if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
-            if (pItem->IsLimitedToAnotherMapOrZone(GetMapId(), new_zone))
+            if (pItem->IsLimitedToAnotherMapOrZone(GetMapId(), new_zone)) {
+                TC_LOG_DEBUG("entities.player.items", "Player::DestroyZoneLimitedItem:  Destroying Item *u in bag %u, slot %u",
+                    pItem->GetEntry(), INVENTORY_SLOT_BAG_0, i);
                 DestroyItem(INVENTORY_SLOT_BAG_0, i, update);
+            }
 }
 
 void Player::DestroyConjuredItems(bool update)
@@ -15558,6 +15636,7 @@ bool Player::GiveQuestSourceItem(Quest const* quest)
 
 bool Player::TakeQuestSourceItem(uint32 questId, bool msg)
 {
+    TC_LOG_DEBUG("entities.player.items", "Player::TakeQuestSourceItem: questId: %u.",questId);
     Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
     if (quest)
     {
@@ -15582,8 +15661,10 @@ bool Player::TakeQuestSourceItem(uint32 questId, bool msg)
             }
 
             ASSERT(item);
-            if (item->GetStartQuest() != questId)
+            if (item->GetStartQuest() != questId) {
+                TC_LOG_DEBUG("entities.player.items", "Player::TakeQuestSourceItem: Destroying quest item where questId does not match %u.",item->GetStartQuest());
                 DestroyItemCount(srcItemId, count, true, true);
+            }
         }
     }
 
@@ -17369,6 +17450,7 @@ bool Player::LoadFromDB(ObjectGuid guid, CharacterDatabaseQueryHolder const& hol
 
     SetMap(map);
     StoreRaidMapDifficulty();
+    map->GetZoneAndAreaId(this->GetPhaseShift(), m_zoneId, m_areaId, this->GetPosition());
 
     // now that map position is determined, check instance validity
     if (!CheckInstanceValidity(true) && !IsInstanceLoginGameMasterException())
@@ -17685,6 +17767,8 @@ bool Player::LoadFromDB(ObjectGuid guid, CharacterDatabaseQueryHolder const& hol
 
     _LoadCUFProfiles(holder.GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_CUF_PROFILES));
 
+    TC_LOG_DEBUG("entities.player.loading","Player::LoadFromDB: Loading complete. Map const %u Zone const %u Area const %u mapId %u, map->Id %u", 
+        m_mapId, m_zoneId, m_areaId, mapId, map->GetId());
     return true;
 }
 
@@ -17932,6 +18016,7 @@ void Player::LoadCorpse(PreparedQueryResult result)
 
 void Player::_LoadInventory(PreparedQueryResult result, uint32 timeDiff)
 {
+    TC_LOG_DEBUG("entities.player.items","Player::_LoadInventory");
     //QueryResult* result = CharacterDatabase.PQuery("SELECT data, text, bag, slot, item, item_template FROM character_inventory JOIN item_instance ON character_inventory.item = item_instance.guid WHERE character_inventory.guid = '%u' ORDER BY bag, slot", GetGUID().GetCounter());
     //NOTE: the "order by `bag`" is important because it makes sure
     //the bagMap is filled before items in the bags are loaded
@@ -18124,8 +18209,8 @@ Item* Player::_LoadItem(CharacterDatabaseTransaction& trans, uint32 zoneId, uint
             // Do not allow to have item limited to another map/zone in alive state
             if (IsAlive() && item->IsLimitedToAnotherMapOrZone(GetMapId(), zoneId))
             {
-                TC_LOG_DEBUG("entities.player.loading", "Player::_LoadInventory: player (GUID: %u, name: '%s', map: %u) has item (GUID: %u, entry: %u) limited to another map (%u). Deleting item.",
-                    GetGUID().GetCounter(), GetName().c_str(), GetMapId(), item->GetGUID().GetCounter(), item->GetEntry(), zoneId);
+                TC_LOG_DEBUG("entities.player.loading", "Player::_LoadInventory: player (GUID: %u, name: '%s', map: %u, area: %u) has item (GUID: %u, entry: %u) limited to another map (%u). Deleting item.",
+                    GetGUID().GetCounter(), GetName().c_str(), GetMapId(), GetZoneId(), item->GetGUID().GetCounter(), item->GetEntry(), zoneId);
                 remove = true;
             }
             // "Conjured items disappear if you are logged out for more than 15 minutes"
